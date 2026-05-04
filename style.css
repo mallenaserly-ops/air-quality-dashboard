@@ -1,4 +1,5 @@
 /* style.css - Air Quality Dashboard */
+/* Final version - Compatible with ESP32 data (µg/m³) */
 
 * {
     margin: 0;
@@ -19,7 +20,7 @@ body {
     padding: 20px;
 }
 
-/* Header Styles */
+/* ================= HEADER ================= */
 .header {
     text-align: center;
     margin-bottom: 40px;
@@ -68,21 +69,23 @@ body {
     animation: pulse 1.5s infinite;
 }
 
+.status-dot.connected {
+    background-color: #2ecc71;
+    animation: none;
+}
+
+.status-dot.error {
+    background-color: #e74c3c;
+    animation: none;
+}
+
 @keyframes pulse {
     0% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.5; transform: scale(0.8); }
     100% { opacity: 1; transform: scale(1); }
 }
 
-.status-dot.connected {
-    background-color: #2ecc71;
-}
-
-.status-dot.error {
-    background-color: #e74c3c;
-}
-
-/* Cards Grid */
+/* ================= CARDS GRID ================= */
 .cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -141,9 +144,9 @@ body {
     color: #2c3e50;
 }
 
-.card-value .unit {
-    font-size: 1rem;
-    color: #999;
+.unit {
+    font-size: 0.9rem;
+    color: #7f8c8d;
     margin-left: 5px;
 }
 
@@ -158,18 +161,58 @@ body {
     color: #999;
 }
 
+/* ================= STATUS INDICATOR ================= */
 .status-indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
 }
 
-.status-indicator.good { background-color: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
-.status-indicator.warning { background-color: #f39c12; box-shadow: 0 0 5px #f39c12; }
-.status-indicator.danger { background-color: #e74c3c; box-shadow: 0 0 5px #e74c3c; }
+.status-indicator.good { 
+    background-color: rgba(46, 204, 113, 0.15); 
+    color: #27ae60;
+}
 
-/* Info Panel */
+.status-indicator.moderate { 
+    background-color: rgba(243, 156, 18, 0.15); 
+    color: #e67e22;
+}
+
+.status-indicator.danger { 
+    background-color: rgba(231, 76, 60, 0.15); 
+    color: #c0392b;
+}
+
+/* Dot indicator */
+.status-indicator::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+}
+
+.status-indicator.good::before { 
+    background-color: #2ecc71; 
+    box-shadow: 0 0 5px #2ecc71;
+}
+
+.status-indicator.moderate::before { 
+    background-color: #f39c12; 
+    box-shadow: 0 0 5px #f39c12;
+}
+
+.status-indicator.danger::before { 
+    background-color: #e74c3c; 
+    box-shadow: 0 0 5px #e74c3c;
+}
+
+/* ================= INFO PANEL ================= */
 .info-panel {
     background: white;
     border-radius: 15px;
@@ -198,7 +241,7 @@ body {
     font-family: monospace;
 }
 
-/* History Table */
+/* ================= HISTORY TABLE ================= */
 .history-section {
     background: white;
     border-radius: 20px;
@@ -250,7 +293,7 @@ tr:hover {
     padding: 30px;
 }
 
-/* Footer */
+/* ================= FOOTER ================= */
 .footer {
     text-align: center;
     padding: 20px;
@@ -258,7 +301,17 @@ tr:hover {
     font-size: 0.8rem;
 }
 
-/* Responsive */
+/* ================= ANIMATION ================= */
+@keyframes highlight {
+    0% { background-color: rgba(46, 204, 113, 0.3); }
+    100% { background-color: transparent; }
+}
+
+.highlight {
+    animation: highlight 1s ease-out;
+}
+
+/* ================= RESPONSIVE ================= */
 @media (max-width: 768px) {
     .container {
         padding: 15px;
@@ -282,20 +335,48 @@ tr:hover {
     
     .info-panel {
         flex-direction: column;
+        gap: 10px;
     }
     
     th, td {
         padding: 8px;
         font-size: 0.8rem;
     }
+    
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 6px 12px;
+    }
 }
 
-/* Animation for new data */
-@keyframes highlight {
-    0% { background-color: rgba(46, 204, 113, 0.3); }
-    100% { background-color: transparent; }
+/* ================= TABLET ================= */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .card-value .value {
+        font-size: 2.5rem;
+    }
 }
 
-.highlight {
-    animation: highlight 1s ease-out;
+/* ================= PRINT STYLE ================= */
+@media print {
+    body {
+        background: white;
+    }
+    
+    .status-badge {
+        background: #f0f0f0;
+        color: #333;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .footer {
+        color: #999;
+    }
 }
