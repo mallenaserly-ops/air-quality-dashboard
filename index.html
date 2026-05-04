@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Air Quality Monitor - Dashboard</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Favicon (optional) -->
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACwSURBVDhPjZFbDsIgEERnK/7Xj/jHwQ1Yw1LJpj4EmV5mhs6U8zwf9d57ENEXIuKLGbRWiIj6ewLpC4iShNh7R875BURZlon3XgghNICqVtVunIdhj5HJuSQhImCMgYhgjAERgYhgjDHgnMN1XWCMwTnHdV2AiIDWWv+JMWJdF6iqfux5njHGWJZlUFX1Y4wRZVnCjDFgjEGWZRBCIJ/niTH+EWutZYyxqkZtK6XUe2J/ARgNwhftAKo2AAAAAElFTkSuQmCC">
 </head>
 <body>
@@ -33,10 +32,10 @@
                 </div>
                 <div class="card-value">
                     <span id="coValue" class="value">---</span>
-                    <span class="unit">ppm</span>
+                    <span class="unit">µg/m³</span>
                 </div>
                 <div class="card-footer">
-                    <span class="label">Safe limit: &lt; 9 ppm</span>
+                    <span class="label">Safe: ≤ 5000 µg/m³</span>
                     <span class="status-indicator" id="coStatus"></span>
                 </div>
             </div>
@@ -49,10 +48,10 @@
                 </div>
                 <div class="card-value">
                     <span id="noxValue" class="value">---</span>
-                    <span class="unit">ppm</span>
+                    <span class="unit">µg/m³</span>
                 </div>
                 <div class="card-footer">
-                    <span class="label">Safe limit: &lt; 0.1 ppm</span>
+                    <span class="label">Safe: ≤ 100 µg/m³</span>
                     <span class="status-indicator" id="noxStatus"></span>
                 </div>
             </div>
@@ -65,10 +64,10 @@
                 </div>
                 <div class="card-value">
                     <span id="so2Value" class="value">---</span>
-                    <span class="unit">ppm</span>
+                    <span class="unit">µg/m³</span>
                 </div>
                 <div class="card-footer">
-                    <span class="label">Safe limit: &lt; 0.1 ppm</span>
+                    <span class="label">Safe: ≤ 80 µg/m³</span>
                     <span class="status-indicator" id="so2Status"></span>
                 </div>
             </div>
@@ -117,9 +116,9 @@
                     <thead>
                         <tr>
                             <th>Time</th>
-                            <th>CO (ppm)</th>
-                            <th>NOx (ppm)</th>
-                            <th>SO₂ (ppm)</th>
+                            <th>CO (µg/m³)</th>
+                            <th>NOx (µg/m³)</th>
+                            <th>SO₂ (µg/m³)</th>
                             <th>Temp (°C)</th>
                         </tr>
                     </thead>
@@ -134,7 +133,8 @@
 
         <!-- Footer -->
         <div class="footer">
-            <p>📡 Data dikirim dari ESP32 setiap 30 detik | 🔄 Realtime update via Supabase</p>
+            <p>📡 Data dikirim dari ESP32 setiap 5 detik | 🔄 Realtime update via Supabase</p>
+            <p>Satuan: mikrogram per meter kubik (µg/m³) | Standar PP No.41 Tahun 1999</p>
         </div>
     </div>
 
