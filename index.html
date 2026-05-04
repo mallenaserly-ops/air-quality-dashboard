@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Air Quality Monitor - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Favicon (optional) -->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACwSURBVDhPjZFbDsIgEERnK/7Xj/jHwQ1Yw1LJpj4EmV5mhs6U8zwf9d57ENEXIuKLGbRWiIj6ewLpC4iShNh7R875BURZlon3XgghNICqVtVunIdhj5HJuSQhImCMgYhgjAERgYhgjDHgnMN1XWCMwTnHdV2AiIDWWv+JMWJdF6iqfux5njHGWJZlUFX1Y4wRZVnCjDFgjEGWZRBCIJ/niTH+EWutZYyxqkZtK6XUe2J/ARgNwhftAKo2AAAAAElFTkSuQmCC">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <span class="icon">🌍</span>
+                Air Quality Monitoring System
+            </h1>
+            <p class="subtitle">Real-time emissions data from ESP32 sensors</p>
+            <div class="status-badge" id="connectionStatus">
+                <span class="status-dot"></span>
+                Connecting to database...
+            </div>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="cards-grid">
+            <!-- CO Card -->
+            <div class="card card-co">
+                <div class="card-header">
+                    <h3>Carbon Monoxide</h3>
+                    <span class="sensor-badge">MQ7</span>
+                </div>
+                <div class="card-value">
+                    <span id="coValue" class="value">---</span>
+                    <span class="unit">ppm</span>
+                </div>
+                <div class="card-footer">
+                    <span class="label">Safe limit: &lt; 9 ppm</span>
+                    <span class="status-indicator" id="coStatus"></span>
+                </div>
+            </div>
+
+            <!-- NOx Card -->
+            <div class="card card-nox">
+                <div class="card-header">
+                    <h3>Nitrogen Oxides</h3>
+                    <span class="sensor-badge">MQ135</span>
+                </div>
+                <div class="card-value">
+                    <span id="noxValue" class="value">---</span>
+                    <span class="unit">ppm</span>
+                </div>
+                <div class="card-footer">
+                    <span class="label">Safe limit: &lt; 0.1 ppm</span>
+                    <span class="status-indicator" id="noxStatus"></span>
+                </div>
+            </div>
+
+            <!-- SO2 Card -->
+            <div class="card card-so2">
+                <div class="card-header">
+                    <h3>Sulfur Dioxide</h3>
+                    <span class="sensor-badge">MQ136</span>
+                </div>
+                <div class="card-value">
+                    <span id="so2Value" class="value">---</span>
+                    <span class="unit">ppm</span>
+                </div>
+                <div class="card-footer">
+                    <span class="label">Safe limit: &lt; 0.1 ppm</span>
+                    <span class="status-indicator" id="so2Status"></span>
+                </div>
+            </div>
+
+            <!-- Temperature Card -->
+            <div class="card card-temp">
+                <div class="card-header">
+                    <h3>Temperature</h3>
+                    <span class="sensor-badge">MAX31855</span>
+                </div>
+                <div class="card-value">
+                    <span id="tempValue" class="value">---</span>
+                    <span class="unit">°C</span>
+                </div>
+                <div class="card-footer">
+                    <span class="label">Thermocouple K-Type</span>
+                    <span class="status-indicator"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="info-panel">
+            <div class="info-item">
+                <span class="info-label">Last Update:</span>
+                <span id="lastUpdate" class="info-value">---</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Record ID:</span>
+                <span id="recordId" class="info-value">---</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Database:</span>
+                <span id="dbName" class="info-value">emisi_data (Supabase)</span>
+            </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="history-section">
+            <h3>
+                <span class="icon">📊</span>
+                Recent Data History (Last 10 Records)
+            </h3>
+            <div class="table-container">
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>CO (ppm)</th>
+                            <th>NOx (ppm)</th>
+                            <th>SO₂ (ppm)</th>
+                            <th>Temp (°C)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr>
+                            <td colspan="5" class="loading-text">Loading data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>📡 Data dikirim dari ESP32 setiap 30 detik | 🔄 Realtime update via Supabase</p>
+        </div>
+    </div>
+
+    <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Main Script -->
+    <script src="script.js"></script>
+</body>
+</html>
