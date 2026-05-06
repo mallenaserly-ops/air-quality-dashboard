@@ -1,5 +1,5 @@
 /* style.css - Air Quality Dashboard */
-/* Final version - Compatible with ESP32 data (µg/m³) */
+/* PERMEN LHK No. 70 Tahun 2016 - Updated with Blower Card */
 
 * {
     margin: 0;
@@ -88,7 +88,7 @@ body {
 /* ================= CARDS GRID ================= */
 .cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 24px;
     margin-bottom: 40px;
 }
@@ -108,9 +108,10 @@ body {
 }
 
 .card-co { border-top-color: #e74c3c; }
-.card-nox { border-top-color: #e67e22; }
 .card-so2 { border-top-color: #3498db; }
+.card-nox { border-top-color: #e67e22; }
 .card-temp { border-top-color: #2ecc71; }
+.card-blower { border-top-color: #9b59b6; }
 
 .card-header {
     display: flex;
@@ -139,7 +140,7 @@ body {
 }
 
 .card-value .value {
-    font-size: 3rem;
+    font-size: 2.8rem;
     font-weight: 700;
     color: #2c3e50;
 }
@@ -154,11 +155,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .card-footer .label {
-    color: #999;
+    color: #7f8c8d;
 }
 
 /* ================= STATUS INDICATOR ================= */
@@ -177,14 +180,30 @@ body {
     color: #27ae60;
 }
 
-.status-indicator.moderate { 
-    background-color: rgba(243, 156, 18, 0.15); 
-    color: #e67e22;
-}
-
 .status-indicator.danger { 
     background-color: rgba(231, 76, 60, 0.15); 
     color: #c0392b;
+}
+
+.status-indicator.info { 
+    background-color: rgba(155, 89, 182, 0.15); 
+    color: #8e44ad;
+}
+
+/* Blower speed specific */
+.status-indicator.blower-low {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+}
+
+.status-indicator.blower-medium {
+    background-color: rgba(243, 156, 18, 0.15);
+    color: #f39c12;
+}
+
+.status-indicator.blower-high {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
 }
 
 /* Dot indicator */
@@ -202,15 +221,14 @@ body {
     box-shadow: 0 0 5px #2ecc71;
 }
 
-.status-indicator.moderate::before { 
-    background-color: #f39c12; 
-    box-shadow: 0 0 5px #f39c12;
-}
-
 .status-indicator.danger::before { 
     background-color: #e74c3c; 
     box-shadow: 0 0 5px #e74c3c;
 }
+
+.status-indicator.blower-low::before { background-color: #e74c3c; }
+.status-indicator.blower-medium::before { background-color: #f39c12; }
+.status-indicator.blower-high::before { background-color: #2ecc71; }
 
 /* ================= INFO PANEL ================= */
 .info-panel {
@@ -293,12 +311,26 @@ tr:hover {
     padding: 30px;
 }
 
+/* Blower badge in table */
+.blower-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.blower-badge.low { background: #ffebee; color: #e74c3c; }
+.blower-badge.medium { background: #fff3e0; color: #f39c12; }
+.blower-badge.high { background: #e8f8f5; color: #2ecc71; }
+
 /* ================= FOOTER ================= */
 .footer {
     text-align: center;
     padding: 20px;
     color: rgba(255, 255, 255, 0.6);
-    font-size: 0.8rem;
+    font-size: 0.7rem;
+    line-height: 1.5;
 }
 
 /* ================= ANIMATION ================= */
@@ -340,7 +372,7 @@ tr:hover {
     
     th, td {
         padding: 8px;
-        font-size: 0.8rem;
+        font-size: 0.7rem;
     }
     
     .status-badge {
@@ -349,18 +381,16 @@ tr:hover {
     }
 }
 
-/* ================= TABLET ================= */
 @media (min-width: 769px) and (max-width: 1024px) {
     .cards-grid {
         grid-template-columns: repeat(2, 1fr);
     }
     
     .card-value .value {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
     }
 }
 
-/* ================= PRINT STYLE ================= */
 @media print {
     body {
         background: white;

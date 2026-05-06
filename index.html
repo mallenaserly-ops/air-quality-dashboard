@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Air Quality Monitor - Dashboard</title>
+    <title>Air Quality Monitor - Dashboard Emisi & Blower</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACwSURBVDhPjZFbDsIgEERnK/7Xj/jHwQ1Yw1LJpj4EmV5mhs6U8zwf9d57ENEXIuKLGbRWiIj6ewLpC4iShNh7R875BURZlon3XgghNICqVtVunIdhj5HJuSQhImCMgYhgjAERgYhgjDHgnMN1XWCMwTnHdV2AiIDWWv+JMWJdF6iqfux5njHGWJZlUFX1Y4wRZVnCjDFgjEGWZRBCIJ/niTH+EWutZYyxqkZtK6XUe2J/ARgNwhftAKo2AAAAAElFTkSuQmCC">
 </head>
@@ -32,27 +32,11 @@
                 </div>
                 <div class="card-value">
                     <span id="coValue" class="value">---</span>
-                    <span class="unit">µg/m³</span>
+                    <span class="unit">mg/Nm³</span>
                 </div>
                 <div class="card-footer">
-                    <span class="label">Safe: ≤ 5000 µg/m³</span>
+                    <span class="label">Baku Mutu: ≤ 625 mg/Nm³</span>
                     <span class="status-indicator" id="coStatus"></span>
-                </div>
-            </div>
-
-            <!-- NOx Card -->
-            <div class="card card-nox">
-                <div class="card-header">
-                    <h3>Nitrogen Oxides</h3>
-                    <span class="sensor-badge">MQ135</span>
-                </div>
-                <div class="card-value">
-                    <span id="noxValue" class="value">---</span>
-                    <span class="unit">µg/m³</span>
-                </div>
-                <div class="card-footer">
-                    <span class="label">Safe: ≤ 100 µg/m³</span>
-                    <span class="status-indicator" id="noxStatus"></span>
                 </div>
             </div>
 
@@ -64,11 +48,27 @@
                 </div>
                 <div class="card-value">
                     <span id="so2Value" class="value">---</span>
-                    <span class="unit">µg/m³</span>
+                    <span class="unit">mg/Nm³</span>
                 </div>
                 <div class="card-footer">
-                    <span class="label">Safe: ≤ 80 µg/m³</span>
+                    <span class="label">Baku Mutu: ≤ 210 mg/Nm³</span>
                     <span class="status-indicator" id="so2Status"></span>
+                </div>
+            </div>
+
+            <!-- NOx Card -->
+            <div class="card card-nox">
+                <div class="card-header">
+                    <h3>Nitrogen Oxides</h3>
+                    <span class="sensor-badge">MQ135</span>
+                </div>
+                <div class="card-value">
+                    <span id="noxValue" class="value">---</span>
+                    <span class="unit">mg/Nm³</span>
+                </div>
+                <div class="card-footer">
+                    <span class="label">Baku Mutu: ≤ 470 mg/Nm³</span>
+                    <span class="status-indicator" id="noxStatus"></span>
                 </div>
             </div>
 
@@ -87,6 +87,22 @@
                     <span class="status-indicator"></span>
                 </div>
             </div>
+
+            <!-- Blower Speed Card -->
+            <div class="card card-blower">
+                <div class="card-header">
+                    <h3>Blower Speed</h3>
+                    <span class="sensor-badge">Relay Control</span>
+                </div>
+                <div class="card-value">
+                    <span id="blowerValue" class="value">---</span>
+                    <span class="unit"></span>
+                </div>
+                <div class="card-footer">
+                    <span class="label">Auto controlled by temperature</span>
+                    <span class="status-indicator" id="blowerStatus"></span>
+                </div>
+            </div>
         </div>
 
         <!-- Info Panel -->
@@ -100,8 +116,8 @@
                 <span id="recordId" class="info-value">---</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Database:</span>
-                <span id="dbName" class="info-value">emisi_data (Supabase)</span>
+                <span class="info-label">Regulasi:</span>
+                <span id="dbName" class="info-value">PERMEN LHK No.70/2016</span>
             </div>
         </div>
 
@@ -116,15 +132,16 @@
                     <thead>
                         <tr>
                             <th>Time</th>
-                            <th>CO (µg/m³)</th>
-                            <th>NOx (µg/m³)</th>
-                            <th>SO₂ (µg/m³)</th>
+                            <th>CO (mg/Nm³)</th>
+                            <th>SO₂ (mg/Nm³)</th>
+                            <th>NOx (mg/Nm³)</th>
                             <th>Temp (°C)</th>
+                            <th>Blower</th>
                         </tr>
                     </thead>
                     <tbody id="historyBody">
                         <tr>
-                            <td colspan="5" class="loading-text">Loading data...</td>
+                            <td colspan="6" class="loading-text">Loading data...救命
                         </tr>
                     </tbody>
                 </table>
@@ -134,7 +151,8 @@
         <!-- Footer -->
         <div class="footer">
             <p>📡 Data dikirim dari ESP32 setiap 5 detik | 🔄 Realtime update via Supabase</p>
-            <p>Satuan: mikrogram per meter kubik (µg/m³) | Standar PP No.41 Tahun 1999</p>
+            <p>📜 Berdasarkan PERMEN LHK No. 70 Tahun 2016 tentang Baku Mutu Emisi Pengolahan Sampah Termal</p>
+            <p>Satuan: mg/Nm³ (miligram per normal meter kubik) | Kondisi: 25°C, 1 atm</p>
         </div>
     </div>
 
