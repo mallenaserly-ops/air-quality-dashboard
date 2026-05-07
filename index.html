@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAACwSURBVDhPjZFbDsIgEERnK/7Xj/jHwQ1Yw1LJpj4EmV5mhs6U8zwf9d57ENEXIuKLGbRWiIj6ewLpC4iShNh7R875BURZlon3XgghNICqVtVunIdhj5HJuSQhImCMgYhgjAERgYhgjDHgnMN1XWCMwTnHdV2AiIDWWv+JMWJdF6iqfux5njHGWJZlUFX1Y4wRZVnCjDFgjEGWZRBCIJ/niTH+EWutZYyxqkZtK6XUe2J/ARgNwhftAKo2AAAAAElFTkSuQmCC">
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -29,7 +31,7 @@
             margin: 0 auto;
         }
 
-        /* Header Styles - Professional & Aesthetic */
+        /* Header Styles */
         .header {
             text-align: center;
             margin-bottom: 40px;
@@ -81,7 +83,6 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* Option decorative line under title */
         .title-underline {
             width: 80px;
             height: 3px;
@@ -100,13 +101,11 @@
             justify-content: center;
             gap: 10px;
             flex-wrap: wrap;
-            font-family: 'Inter', sans-serif;
         }
 
         .subtitle-divider {
             color: #b8d9cc;
             font-size: 1rem;
-            font-weight: 300;
         }
 
         .facility-badge {
@@ -119,7 +118,6 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            letter-spacing: 0.3px;
         }
 
         .status-badge {
@@ -135,7 +133,6 @@
             border: 1px solid rgba(46, 125, 100, 0.25);
             font-weight: 500;
             color: #2d6a4f;
-            font-family: 'Inter', sans-serif;
         }
 
         .status-dot {
@@ -162,7 +159,7 @@
             50% { opacity: 0.5; transform: scale(0.8); }
         }
 
-        /* Cards Grid - 3 cards atas (gas emisi) */
+        /* Cards Grid */
         .emission-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -170,7 +167,6 @@
             margin-bottom: 32px;
         }
 
-        /* Cards Grid - 2 cards bawah (temperatur & blower) */
         .secondary-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -180,7 +176,6 @@
 
         .card {
             background: linear-gradient(135deg, #ffffff, #f8fdf9);
-            backdrop-filter: blur(10px);
             border-radius: 28px;
             padding: 28px;
             border: 1px solid rgba(46, 125, 100, 0.2);
@@ -235,7 +230,6 @@
             border-radius: 20px;
             font-weight: 600;
             color: #2e7d64;
-            font-family: 'Inter', monospace;
         }
 
         .card-value {
@@ -260,7 +254,6 @@
             font-size: 0.9rem;
             color: #7faa98;
             font-weight: 500;
-            font-family: 'Inter', sans-serif;
         }
 
         .card-footer {
@@ -275,7 +268,6 @@
         .label {
             color: #7faa98;
             font-weight: 500;
-            font-family: 'Inter', sans-serif;
         }
 
         .status-indicator {
@@ -283,7 +275,6 @@
             border-radius: 20px;
             font-weight: 600;
             font-size: 0.7rem;
-            font-family: 'Inter', sans-serif;
         }
 
         .status-normal {
@@ -292,19 +283,12 @@
             border: 1px solid rgba(46, 125, 100, 0.25);
         }
 
-        .status-warning {
-            background: rgba(255, 179, 71, 0.15);
-            color: #e68a2e;
-            border: 1px solid rgba(255, 179, 71, 0.25);
-        }
-
         .status-danger {
             background: rgba(255, 140, 90, 0.15);
             color: #e65c2e;
             border: 1px solid rgba(255, 140, 90, 0.25);
         }
 
-        /* Blower specific status */
         .blower-low {
             background: rgba(46, 125, 100, 0.15);
             color: #2e7d64;
@@ -323,11 +307,75 @@
             border: 1px solid rgba(255, 140, 90, 0.25);
         }
 
-        /* Blower value large text */
         .blower-value-large {
             font-size: 2.5rem !important;
-            font-weight: 800 !important;
         }
+
+        /* Charts Section - Single Chart */
+        .charts-section {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 28px;
+            padding: 28px;
+            border: 1px solid rgba(46, 125, 100, 0.2);
+            margin-bottom: 32px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .charts-section h3 {
+            font-family: 'Poppins', 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2d6a4f;
+        }
+
+        .single-chart-container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(46, 125, 100, 0.15);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        canvas {
+            max-height: 400px;
+            width: 100%;
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .legend-color-co { background-color: #ff9f4a; }
+        .legend-color-so2 { background-color: #ffb347; }
+        .legend-color-nox { background-color: #ff8c5a; }
 
         /* Info Panel */
         .info-panel {
@@ -341,7 +389,6 @@
             padding: 20px 28px;
             margin-bottom: 32px;
             border: 1px solid rgba(46, 125, 100, 0.2);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         }
 
         .info-item {
@@ -353,13 +400,11 @@
         .info-label {
             font-weight: 500;
             color: #7faa98;
-            font-family: 'Inter', sans-serif;
         }
 
         .info-value {
             font-weight: 600;
             color: #2e7d64;
-            font-family: 'Inter', sans-serif;
         }
 
         /* History Section */
@@ -370,7 +415,6 @@
             padding: 28px;
             border: 1px solid rgba(46, 125, 100, 0.2);
             margin-bottom: 32px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         }
 
         .history-section h3 {
@@ -410,7 +454,6 @@
             border-bottom: 1px solid rgba(46, 125, 100, 0.1);
             font-size: 0.85rem;
             color: #3d6b5c;
-            font-family: 'Inter', sans-serif;
         }
 
         tr:hover {
@@ -423,14 +466,12 @@
             border-radius: 20px;
             font-size: 0.7rem;
             font-weight: 600;
-            font-family: 'Inter', sans-serif;
         }
 
         .loading-text {
             text-align: center;
             padding: 40px;
             color: #7faa98;
-            font-family: 'Inter', sans-serif;
         }
 
         /* Footer */
@@ -440,14 +481,13 @@
             font-size: 0.7rem;
             color: #7faa98;
             border-top: 1px solid rgba(46, 125, 100, 0.15);
-            font-family: 'Inter', sans-serif;
         }
 
         .footer p {
             margin: 4px 0;
         }
 
-        /* Decorative elements */
+        /* Decorative */
         .bg-decoration {
             position: fixed;
             bottom: 0;
@@ -479,10 +519,7 @@
 
         /* Responsive */
         @media (max-width: 1024px) {
-            .emission-grid {
-                gap: 20px;
-            }
-            .secondary-grid {
+            .emission-grid, .secondary-grid {
                 gap: 20px;
             }
         }
@@ -504,11 +541,7 @@
                 font-size: 1.8rem;
             }
 
-            .title-underline {
-                width: 60px;
-            }
-
-            .emission-grid {
+            .emission-grid, .charts-grid {
                 grid-template-columns: 1fr;
                 gap: 16px;
             }
@@ -527,7 +560,7 @@
                 gap: 10px;
             }
 
-            .history-section {
+            .history-section, .charts-section {
                 padding: 16px;
             }
 
@@ -535,29 +568,16 @@
                 padding: 8px;
                 font-size: 0.7rem;
             }
-        }
 
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .emission-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 16px;
+            .chart-wrapper {
+                height: 300px;
             }
 
-            .secondary-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 16px;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .value {
-                font-size: 2.2rem;
+            .chart-legend {
+                gap: 15px;
             }
         }
 
-        /* Animations */
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -569,14 +589,13 @@
             }
         }
 
-        .card, .info-panel, .history-section {
+        .card, .info-panel, .history-section, .charts-section {
             animation: fadeIn 0.5s ease-out;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ==================== KONFIGURASI SUPABASE ====================
-        // GANTI DENGAN CREDENTIAL SUPABASE ANDA YANG ASLI
         const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
         const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
         // ==============================================================
@@ -584,19 +603,18 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentData = null;
+        let emissionChart = null;
 
-        // Fungsi untuk menentukan status blower berdasarkan kecepatan (0-100%)
+        // Fungsi untuk menentukan status blower
         function getBlowerStatus(speed) {
             if (speed === undefined || speed === null) return '---';
             const speedNum = typeof speed === 'number' ? speed : parseFloat(speed);
             if (isNaN(speedNum)) return 'Unknown';
-            
             if (speedNum <= 33.33) return 'Low';
             if (speedNum <= 66.66) return 'Medium';
             return 'High';
         }
 
-        // Fungsi untuk mendapatkan class CSS status blower
         function getBlowerStatusClass(status) {
             switch(status) {
                 case 'Low': return 'blower-low';
@@ -606,7 +624,6 @@
             }
         }
 
-        // Fungsi untuk mendapatkan class status emisi
         function getStatusClass(value, limit) {
             if (value === null || value === undefined || isNaN(value)) return '';
             if (value <= limit) return 'status-normal';
@@ -619,61 +636,196 @@
             return '⚠️ Melebihi Baku Mutu';
         }
 
-        // Update UI dengan data terbaru
+        // Initialize single chart with 3 datasets
+        function initChart() {
+            const ctx = document.getElementById('emissionChart').getContext('2d');
+            
+            emissionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'CO (mg/Nm³)',
+                            data: [],
+                            borderColor: '#ff9f4a',
+                            backgroundColor: 'rgba(255, 159, 74, 0.05)',
+                            borderWidth: 2.5,
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: '#ff9f4a',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'SO₂ (mg/Nm³)',
+                            data: [],
+                            borderColor: '#ffb347',
+                            backgroundColor: 'rgba(255, 180, 71, 0.05)',
+                            borderWidth: 2.5,
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: '#ffb347',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'NOx (mg/Nm³)',
+                            data: [],
+                            borderColor: '#ff8c5a',
+                            backgroundColor: 'rgba(255, 140, 90, 0.05)',
+                            borderWidth: 2.5,
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: '#ff8c5a',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: { size: 12, family: 'Poppins, Inter' },
+                                usePointStyle: true,
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#2d6a4f',
+                            titleFont: { size: 13, family: 'Inter', weight: 'bold' },
+                            bodyFont: { size: 12, family: 'Inter' },
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw.toFixed(2)} mg/Nm³`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { 
+                                color: 'rgba(0,0,0,0.05)',
+                                drawBorder: true
+                            },
+                            title: {
+                                display: true,
+                                text: 'Konsentrasi (mg/Nm³)',
+                                font: { size: 11, family: 'Inter', weight: '500' },
+                                color: '#5a8f7c'
+                            },
+                            ticks: {
+                                font: { size: 10, family: 'Inter' },
+                                callback: function(value) {
+                                    return value + ' mg/Nm³';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            title: {
+                                display: true,
+                                text: 'Waktu',
+                                font: { size: 11, family: 'Inter', weight: '500' },
+                                color: '#5a8f7c'
+                            },
+                            ticks: {
+                                font: { size: 10, family: 'Inter' },
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    },
+                    elements: {
+                        line: {
+                            borderJoin: 'round'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update chart with history data
+        function updateChart(historyData) {
+            if (!historyData || historyData.length === 0 || !emissionChart) return;
+            
+            // Reverse untuk urutan chronological (terlama ke terbaru)
+            const reversed = [...historyData].reverse();
+            
+            // Format labels: HH:MM
+            const labels = reversed.map(r => {
+                const date = new Date(r.created_at);
+                return `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+            });
+            
+            const coData = reversed.map(r => r.co !== undefined ? r.co : r.CO || 0);
+            const so2Data = reversed.map(r => r.so2 !== undefined ? r.so2 : r.SO2 || 0);
+            const noxData = reversed.map(r => r.nox !== undefined ? r.nox : r.NOx || 0);
+            
+            emissionChart.data.labels = labels;
+            emissionChart.data.datasets[0].data = coData;
+            emissionChart.data.datasets[1].data = so2Data;
+            emissionChart.data.datasets[2].data = noxData;
+            emissionChart.update();
+        }
+
+        // Update dashboard UI
         function updateDashboard(data) {
             if (!data) return;
 
-            // Update nilai CO
             const coValue = data.co !== undefined ? data.co : data.CO;
             document.getElementById('coValue').innerText = coValue !== undefined && coValue !== null ? coValue.toFixed(2) : '---';
-            const coStatusClass = getStatusClass(coValue, 625);
-            const coStatusText = getStatusText(coValue, 625);
-            document.getElementById('coStatus').innerHTML = coStatusText;
-            document.getElementById('coStatus').className = `status-indicator ${coStatusClass}`;
+            document.getElementById('coStatus').innerHTML = getStatusText(coValue, 625);
+            document.getElementById('coStatus').className = `status-indicator ${getStatusClass(coValue, 625)}`;
 
-            // Update nilai SO2
             const so2Value = data.so2 !== undefined ? data.so2 : data.SO2;
             document.getElementById('so2Value').innerText = so2Value !== undefined && so2Value !== null ? so2Value.toFixed(2) : '---';
-            const so2StatusClass = getStatusClass(so2Value, 210);
-            const so2StatusText = getStatusText(so2Value, 210);
-            document.getElementById('so2Status').innerHTML = so2StatusText;
-            document.getElementById('so2Status').className = `status-indicator ${so2StatusClass}`;
+            document.getElementById('so2Status').innerHTML = getStatusText(so2Value, 210);
+            document.getElementById('so2Status').className = `status-indicator ${getStatusClass(so2Value, 210)}`;
 
-            // Update nilai NOx
             const noxValue = data.nox !== undefined ? data.nox : data.NOx;
             document.getElementById('noxValue').innerText = noxValue !== undefined && noxValue !== null ? noxValue.toFixed(2) : '---';
-            const noxStatusClass = getStatusClass(noxValue, 470);
-            const noxStatusText = getStatusText(noxValue, 470);
-            document.getElementById('noxStatus').innerHTML = noxStatusText;
-            document.getElementById('noxStatus').className = `status-indicator ${noxStatusClass}`;
+            document.getElementById('noxStatus').innerHTML = getStatusText(noxValue, 470);
+            document.getElementById('noxStatus').className = `status-indicator ${getStatusClass(noxValue, 470)}`;
 
-            // Update suhu
             const tempValue = data.temperature !== undefined ? data.temperature : data.Temperature;
-            const tempDisplay = tempValue !== undefined && tempValue !== null ? tempValue.toFixed(1) : '---';
-            document.getElementById('tempValue').innerHTML = `${tempDisplay}<span class="unit">°C</span>`;
+            document.getElementById('tempValue').innerHTML = `${tempValue !== undefined && tempValue !== null ? tempValue.toFixed(1) : '---'}<span class="unit">°C</span>`;
             
-            // Update blower (hanya status Low/Medium/High)
             const blowerSpeed = data.blower_speed !== undefined ? data.blower_speed : data.BlowerSpeed;
             const blowerStatus = getBlowerStatus(blowerSpeed);
             document.getElementById('blowerValue').innerHTML = blowerStatus;
-            const blowerStatusClass = getBlowerStatusClass(blowerStatus);
             document.getElementById('blowerStatus').innerHTML = blowerStatus;
-            document.getElementById('blowerStatus').className = `status-indicator ${blowerStatusClass}`;
+            document.getElementById('blowerStatus').className = `status-indicator ${getBlowerStatusClass(blowerStatus)}`;
 
-            // Update info panel
             const lastUpdate = data.created_at || data.timestamp || new Date().toISOString();
             document.getElementById('lastUpdate').innerText = new Date(lastUpdate).toLocaleString('id-ID');
             document.getElementById('recordId').innerText = data.id || data.ID || '---';
 
-            // Update connection status
             const statusDot = document.querySelector('.status-dot');
-            const statusText = document.getElementById('connectionStatus');
             statusDot.classList.add('connected');
             statusDot.classList.remove('disconnected');
-            statusText.innerHTML = '<span class="status-dot connected"></span> Connected • Real-time';
+            document.getElementById('connectionStatus').innerHTML = '<span class="status-dot connected"></span> Connected • Real-time';
         }
 
-        // Ambil data terbaru dari tabel 'sensor_data'
+        // Fetch latest data
         async function fetchLatestData() {
             try {
                 const { data, error } = await supabase
@@ -691,23 +843,27 @@
             } catch (error) {
                 console.error('Error fetching data:', error);
                 const statusDot = document.querySelector('.status-dot');
-                const statusText = document.getElementById('connectionStatus');
                 statusDot.classList.add('disconnected');
                 statusDot.classList.remove('connected');
-                statusText.innerHTML = '<span class="status-dot disconnected"></span> Connection Error • Retrying...';
+                document.getElementById('connectionStatus').innerHTML = '<span class="status-dot disconnected"></span> Connection Error • Retrying...';
             }
         }
 
-        // Ambil history 10 record terakhir
+        // Fetch history and update table + chart
         async function fetchHistory() {
             try {
                 const { data, error } = await supabase
                     .from('sensor_data')
                     .select('*')
                     .order('created_at', { ascending: false })
-                    .limit(10);
+                    .limit(20);
 
                 if (error) throw error;
+
+                // Update chart with history data
+                if (data && data.length > 0) {
+                    updateChart(data);
+                }
 
                 const tbody = document.getElementById('historyBody');
                 if (!data || data.length === 0) {
@@ -715,7 +871,7 @@
                     return;
                 }
 
-                tbody.innerHTML = data.map(record => {
+                tbody.innerHTML = data.slice(0, 10).map(record => {
                     const blowerStatus = getBlowerStatus(record.blower_speed);
                     const blowerClass = getBlowerStatusClass(blowerStatus);
                     return `
@@ -735,7 +891,7 @@
             }
         }
 
-        // Subscribe ke perubahan realtime
+        // Subscribe to realtime
         function subscribeToRealtime() {
             const subscription = supabase
                 .channel('sensor_data_changes')
@@ -749,25 +905,24 @@
                     }
                 )
                 .subscribe();
-
             return subscription;
         }
 
-        // Inisialisasi dashboard
+        // Initialize
         async function init() {
+            initChart();
             await fetchLatestData();
             await fetchHistory();
             subscribeToRealtime();
         }
 
-        // Jalankan inisialisasi saat halaman dimuat
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </head>
 <body>
     <div class="bg-decoration"></div>
     <div class="container">
-        <!-- Header - Professional & Aesthetic -->
+        <!-- Header -->
         <div class="header">
             <div class="icon-wrapper">
                 <span class="flame-icon">🔥</span>
@@ -781,9 +936,7 @@
                 <span class="subtitle-divider">•</span>
                 <span>🗑️ Pengolahan Sampah Rumah Tangga</span>
                 <span class="subtitle-divider">•</span>
-                <span class="facility-badge">
-                    <span>🌱</span> Ramah Lingkungan
-                </span>
+                <span class="facility-badge">🌱 Ramah Lingkungan</span>
             </div>
             <div class="status-badge" id="connectionStatus">
                 <span class="status-dot"></span>
@@ -791,9 +944,8 @@
             </div>
         </div>
 
-        <!-- 3 Cards Atas: Emisi Gas (CO, SO2, NOx) -->
+        <!-- 3 Cards Atas: Emisi Gas -->
         <div class="emission-grid">
-            <!-- CO Card -->
             <div class="card card-co">
                 <div class="card-header">
                     <h3>🌫️ Carbon Monoxide</h3>
@@ -809,7 +961,6 @@
                 </div>
             </div>
 
-            <!-- SO2 Card -->
             <div class="card card-so2">
                 <div class="card-header">
                     <h3>⚠️ Sulfur Dioxide</h3>
@@ -825,7 +976,6 @@
                 </div>
             </div>
 
-            <!-- NOx Card -->
             <div class="card card-nox">
                 <div class="card-header">
                     <h3>🔥 Nitrogen Oxides</h3>
@@ -844,7 +994,6 @@
 
         <!-- 2 Cards Bawah: Temperature & Blower -->
         <div class="secondary-grid">
-            <!-- Temperature Card -->
             <div class="card card-temp">
                 <div class="card-header">
                     <h3>🌡️ Temperature Ruang Bakar</h3>
@@ -859,7 +1008,6 @@
                 </div>
             </div>
 
-            <!-- Blower Speed Card -->
             <div class="card card-blower">
                 <div class="card-header">
                     <h3>🌀 Blower Speed</h3>
@@ -891,6 +1039,33 @@
             </div>
         </div>
 
+        <!-- SINGLE CHART SECTION - 3 parameters in 1 graph -->
+        <div class="charts-section">
+            <h3>
+                <span class="icon">📈</span>
+                Tren Emisi Gas (CO, SO₂, NOx) - 20 Data Terakhir
+            </h3>
+            <div class="single-chart-container">
+                <div class="chart-wrapper">
+                    <canvas id="emissionChart"></canvas>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <div class="legend-color legend-color-co"></div>
+                        <span>Carbon Monoxide (CO)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-color-so2"></div>
+                        <span>Sulfur Dioxide (SO₂)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-color-nox"></div>
+                        <span>Nitrogen Oxides (NOx)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- History Table -->
         <div class="history-section">
             <h3>
@@ -898,21 +1073,12 @@
                 Riwayat Data Emisi (10 Rekam Terakhir)
             </h3>
             <div class="table-container">
-                <table id="historyTable">
+                <table>
                     <thead>
-                        <tr>
-                            <th>Waktu</th>
-                            <th>CO (mg/Nm³)</th>
-                            <th>SO₂ (mg/Nm³)</th>
-                            <th>NOx (mg/Nm³)</th>
-                            <th>Suhu (°C)</th>
-                            <th>Blower</th>
-                        </tr>
+                        <tr><th>Waktu</th><th>CO (mg/Nm³)</th><th>SO₂ (mg/Nm³)</th><th>NOx (mg/Nm³)</th><th>Suhu (°C)</th><th>Blower</th></tr>
                     </thead>
                     <tbody id="historyBody">
-                        <tr>
-                            <td colspan="6" class="loading-text">🌿 Loading data...</td>
-                        </tr>
+                        <tr><td colspan="6" class="loading-text">🌿 Loading data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -923,7 +1089,6 @@
             <p>📡 Data real-time dari ESP32 | 🔄 Sinkronisasi via Supabase | 🔥 Suhu optimal pembakaran: 800-1100°C</p>
             <p>📜 Berdasarkan PERMEN LHK No. 70 Tahun 2016 tentang Baku Mutu Emisi Pengolahan Sampah Termal</p>
             <p>🌱 Satuan: mg/Nm³ (miligram per normal meter kubik) | Kondisi referensi: 25°C, 1 atm</p>
-            <p style="margin-top: 8px;">🏭 Insinerator dengan sistem pengendalian emisi terpadu | Zero Waste Initiative ♻️</p>
         </div>
     </div>
 </body>
