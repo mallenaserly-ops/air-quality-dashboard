@@ -6,7 +6,7 @@
 // ============================================================
 const APP_SUPABASE_URL = 'https://imirwkngfsbalpdtxsdl.supabase.co';
 const APP_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltaXJ3a25nZnNiYWxwZHR4c2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NjM5OTAsImV4cCI6MjA5MzQzOTk5MH0.ga1oO44cAFz8eduo9t8MOxQwrtlPSliQnoKdUNib1z4';
-const APP_TABLE_NAME = 'emisi_data';
+const APP_TABLE_NAME = 'database_percobaa_satu';
 
 // ============================================================
 // GLOBAL VARIABLES
