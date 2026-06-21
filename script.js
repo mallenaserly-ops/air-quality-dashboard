@@ -202,7 +202,7 @@ function updateDashboard(data) {
     const isSuhu = currentTable === TABLES.SUHU;
 
     if (isSuhu) {
-        // === MODE SUHU ===
+        // === MODE SUHU - TANPA ALERT ===
         const suhu = data.suhu_celsius !== undefined ? parseFloat(data.suhu_celsius) : '---';
         const blower = data.blower_speed !== undefined ? data.blower_speed : null;
 
@@ -239,7 +239,7 @@ function updateDashboard(data) {
         document.getElementById('tableInfo').innerHTML = '<i class="fas fa-info-circle"></i> Menampilkan data suhu & blower';
 
     } else {
-        // === MODE GAS ===
+        // === MODE GAS - TETAP ADA ALERT ===
         const co = data.nilai_co_ppm !== undefined ? parseFloat(data.nilai_co_ppm) : '---';
         const nox = data.nilai_nox_ppm !== undefined ? parseFloat(data.nilai_nox_ppm) : '---';
         const nh3 = data.nilai_nh3_ppm !== undefined ? parseFloat(data.nilai_nh3_ppm) : '---';
@@ -287,7 +287,7 @@ function updateDashboard(data) {
         document.getElementById('tableInfo').innerHTML = '<i class="fas fa-info-circle"></i> Menampilkan data gas (CO, NOx, NH₃)';
     }
 
-    // Update timestamp di footer info (jika ada)
+    // Update timestamp
     if (data.timestamp) {
         const formattedDate = new Date(data.timestamp).toLocaleString('id-ID', {
             day: '2-digit',
@@ -390,33 +390,26 @@ function updateHistoryTable(dataArray) {
     const latest10 = [...dataArray].reverse().slice(0, 10);
 
     if (isSuhu) {
-        // Mode Suhu: Tampilkan suhu & blower
+        // === MODE SUHU - TANPA ALERT ===
         tbody.innerHTML = latest10.map(item => {
             const suhu = item.suhu_celsius !== undefined ? parseFloat(item.suhu_celsius) : null;
             const blower = item.blower_speed !== undefined ? item.blower_speed : null;
-            const isAlert = suhu !== null && suhu > 45;
             const blowerInfo = getBlowerInfo(blower);
 
             return `
-                <tr class="${isAlert ? 'alert-row' : ''}">
+                <tr>
                     <td>${new Date(item.timestamp).toLocaleString('id-ID')}</td>
-                    <td class="${isAlert ? 'danger-text' : 'normal-text'}">
-                        ${suhu !== null ? suhu.toFixed(1) : '-'} °C
-                    </td>
+                    <td>${suhu !== null ? suhu.toFixed(1) : '-'} °C</td>
                     <td><span class="blower-badge ${blowerInfo.class}">${blower !== null ? blowerInfo.text : '-'}</span></td>
                     <td style="display:none;">-</td>
                     <td style="display:none;">-</td>
                     <td style="display:none;">-</td>
-                    <td>
-                        ${isAlert 
-                            ? '<span class="status-badge-table danger">⚠️ ALERT</span>' 
-                            : '<span class="status-badge-table good">✓ NORMAL</span>'}
-                    </td>
+                    <td><span class="status-badge-table info">🌡️ SUHU</span></td>
                 </tr>
             `;
         }).join('');
     } else {
-        // Mode Gas: Tampilkan CO, NOx, NH3
+        // === MODE GAS - TETAP ADA ALERT ===
         tbody.innerHTML = latest10.map(item => {
             const co = item.nilai_co_ppm !== undefined ? parseFloat(item.nilai_co_ppm) : null;
             const nox = item.nilai_nox_ppm !== undefined ? parseFloat(item.nilai_nox_ppm) : null;
@@ -477,11 +470,11 @@ function updateCharts(dataArray) {
     });
 
     if (isSuhu) {
-        // Mode Suhu: Hanya chart suhu
+        // === MODE SUHU - TANPA THRESHOLD ===
         const suhuData = latest20.map(item => item.suhu_celsius || 0);
-        createChart('chart1', 'Suhu (°C)', suhuData, labels, '#e74c3c', 0);
+        createChart('chart1', 'Suhu (°C)', suhuData, labels, '#e67e22', 0);
     } else {
-        // Mode Gas: CO, NOx, NH3
+        // === MODE GAS - TETAP ADA THRESHOLD ===
         const coData = latest20.map(item => item.nilai_co_ppm || 0);
         const noxData = latest20.map(item => item.nilai_nox_ppm || 0);
         const nh3Data = latest20.map(item => item.nilai_nh3_ppm || 0);
@@ -496,6 +489,9 @@ function createChart(canvasId, label, data, labels, color, threshold) {
     const ctx = document.getElementById(canvasId)?.getContext('2d');
     if (!ctx) return;
 
+    // Jika threshold = 0, tidak ada alert (mode suhu)
+    const hasThreshold = threshold > 0;
+
     charts[canvasId] = new Chart(ctx, {
         type: 'line',
         data: {
@@ -507,7 +503,9 @@ function createChart(canvasId, label, data, labels, color, threshold) {
                 backgroundColor: color + '33',
                 tension: 0.3,
                 fill: true,
-                pointBackgroundColor: threshold > 0 ? data.map(v => v > threshold ? '#e74c3c' : '#2ecc71') : '#2ecc71',
+                pointBackgroundColor: hasThreshold 
+                    ? data.map(v => v > threshold ? '#e74c3c' : '#2ecc71') 
+                    : '#2ecc71',
                 pointBorderColor: '#fff',
                 pointRadius: 4,
                 pointHoverRadius: 6
@@ -522,7 +520,9 @@ function createChart(canvasId, label, data, labels, color, threshold) {
                     callbacks: {
                         label: function(context) {
                             let value = context.raw;
-                            let status = threshold > 0 && value > threshold ? '⚠️ MELEBIHI BATAS!' : '✓ NORMAL';
+                            let status = hasThreshold && value > threshold 
+                                ? '⚠️ MELEBIHI BATAS!' 
+                                : '✓ NORMAL';
                             return `${context.dataset.label}: ${value.toFixed(2)} ${status}`;
                         }
                     }
