@@ -3,642 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Air Quality Monitor - Dashboard Emisi & Blower | Real-time</title>
+    <title>Air Quality Monitoring | Green Aesthetic Dashboard</title>
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- Supabase JS -->
+    <!-- Supabase JS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-        }
-
-        body {
-            background: #f0f4f8;
-            padding: 24px 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #0f2b3d 0%, #1b4f6e 100%);
-            border-radius: 32px;
-            padding: 24px 32px;
-            margin-bottom: 28px;
-            color: white;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            font-size: 1.8rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 600;
-        }
-
-        .subtitle {
-            opacity: 0.85;
-            margin-top: 8px;
-            font-size: 0.95rem;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(4px);
-            padding: 8px 18px;
-            border-radius: 60px;
-            margin-top: 16px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            width: fit-content;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            background-color: #facc15;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.4; transform: scale(0.8);}
-            100% { opacity: 1; transform: scale(1.2);}
-        }
-
-        .gas-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            margin-bottom: 28px;
-        }
-
-        .combined-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 1.5rem;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-            transition: transform 0.2s ease;
-            border: 1px solid rgba(0,0,0,0.03);
-        }
-
-        .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 20px 30px -12px rgba(0,0,0,0.1);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-            border-bottom: 2px solid #eef2f6;
-            padding-bottom: 12px;
-        }
-
-        .card-header h3 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #1e2a3e;
-        }
-
-        .sensor-badge {
-            background: #eef2ff;
-            padding: 5px 12px;
-            border-radius: 60px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #1e4a76;
-        }
-
-        .card-value {
-            margin: 15px 0 12px;
-            display: flex;
-            align-items: baseline;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .value {
-            font-size: 2.7rem;
-            font-weight: 800;
-            color: #0f2b3d;
-            line-height: 1.1;
-        }
-
-        .unit {
-            font-size: 1rem;
-            color: #5b6e8c;
-            font-weight: 500;
-        }
-
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 12px;
-            font-size: 0.8rem;
-        }
-
-        .label {
-            color: #5b6e8c;
-        }
-
-        .status-indicator {
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.7rem;
-            background: #eef2f6;
-        }
-
-        .status-normal {
-            background: #dcfce7;
-            color: #15803d;
-        }
-        .status-warning {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-        .status-moderate {
-            background: #ffedd5;
-            color: #c2410c;
-        }
-
-        .info-panel {
-            background: white;
-            border-radius: 24px;
-            padding: 18px 28px;
-            margin-bottom: 32px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 32px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            border: 1px solid #e2e8f0;
-        }
-
-        .info-item {
-            display: flex;
-            gap: 12px;
-            font-size: 0.9rem;
-        }
-        .info-label {
-            font-weight: 600;
-            color: #334155;
-        }
-        .info-value {
-            color: #0f3b5c;
-            font-weight: 500;
-        }
-
-        .chart-section {
-            background: white;
-            border-radius: 28px;
-            padding: 20px 24px 28px;
-            margin-bottom: 32px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-        }
-        .chart-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #1e2a3e;
-        }
-        .single-chart-container {
-            position: relative;
-            width: 100%;
-            min-height: 400px;
-        }
-        canvas#emissionsChart {
-            max-height: 420px;
-            width: 100%;
-        }
-        .chart-legend-note {
-            margin-top: 16px;
-            text-align: center;
-            font-size: 0.8rem;
-            color: #5b6e8c;
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            flex-wrap: wrap;
-        }
-        .legend-color {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border-radius: 4px;
-            margin-right: 6px;
-            vertical-align: middle;
-        }
-
-        .history-section {
-            background: white;
-            border-radius: 28px;
-            padding: 20px 0 24px 0;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-            overflow-x: auto;
-        }
-        .history-section h3 {
-            padding: 0 24px 16px 24px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 1.2rem;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-        th {
-            text-align: left;
-            padding: 14px 16px;
-            background: #f8fafc;
-            color: #1e293b;
-            font-weight: 600;
-        }
-        td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #edf2f7;
-            color: #1f2a44;
-        }
-        .blower-badge {
-            background: #e6f7ff;
-            padding: 4px 10px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.75rem;
-            display: inline-block;
-        }
-        .footer {
-            margin-top: 36px;
-            text-align: center;
-            font-size: 0.75rem;
-            color: #5b6e8c;
-            background: white;
-            padding: 20px;
-            border-radius: 28px;
-        }
-        .loading-text {
-            text-align: center;
-            padding: 40px;
-            color: #6c86a3;
-        }
-        .export-btn {
-            background: #10b981;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-left: 16px;
-            font-size: 0.8rem;
-        }
-        .export-btn:hover {
-            background: #059669;
-        }
-
-        @media (max-width: 860px) {
-            .gas-grid { grid-template-columns: 1fr; gap: 16px; }
-            .combined-row { grid-template-columns: 1fr; }
-            .card-value .value { font-size: 2rem; }
-            .single-chart-container { min-height: 300px; }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1><span>🌫️</span> Air Quality Monitoring System</h1>
-        <p class="subtitle">Real-time emisi gas & kontrol blower | ESP32 → Supabase (database_percobaan_satu)</p>
-        <div class="status-badge" id="connectionStatus">
-            <span class="status-dot"></span> Menyambung ke database...
+    <div class="dashboard-container">
+        <!-- HEADER SECTION -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-leaf"></i>
+                    <h1>Air Quality Monitoring</h1>
+                </div>
+                <p class="subtitle">Real-time emisi gas & kontrol blower | ESP32 → Supabase</p>
+            </div>
+            <div class="header-right">
+                <div class="connection-badge" id="connectionStatus">
+                    <span class="status-dot"></span> Menghubungkan...
+                </div>
+                <div class="weather-widget">
+                    <i class="fas fa-cloud-sun"></i>
+                    <span>Green Environment</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLE SELECTOR -->
+        <div class="table-selector">
+            <div class="selector-group">
+                <label for="tableSelect"><i class="fas fa-database"></i> Pilih Tabel Data:</label>
+                <select id="tableSelect" onchange="changeTable(this.value)">
+                    <option value="monitoring_suhu">🌡️ Monitoring Suhu & Blower</option>
+                    <option value="monitoring_gas">💨 Monitoring Gas (CO, NOx, NH₃)</option>
+                </select>
+            </div>
+            <div class="selector-info">
+                <span id="tableInfo"><i class="fas fa-info-circle"></i> Menampilkan data suhu & blower</span>
+            </div>
+        </div>
+
+        <!-- CARDS SECTION - Dinamis berdasarkan mode -->
+        <div id="cardsContainer">
+            <!-- Cards akan diisi oleh JavaScript -->
+        </div>
+
+        <!-- CHARTS SECTION -->
+        <div class="charts-section">
+            <div class="section-header">
+                <i class="fas fa-chart-line"></i>
+                <h2 id="chartTitle">Tren Suhu (20 Data Terbaru)</h2>
+                <button class="refresh-btn" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div class="charts-grid" id="chartsGrid">
+                <!-- Charts akan diisi oleh JavaScript -->
+            </div>
+        </div>
+
+        <!-- HISTORY TABLE SECTION -->
+        <div class="history-section" id="historySection">
+            <div class="section-header">
+                <i class="fas fa-history"></i>
+                <h2 id="historyTitle">Riwayat Data (10 Rekam Terbaru)</h2>
+            </div>
+            <div class="table-wrapper">
+                <table class="history-table">
+                    <thead id="historyHeader">
+                        <!-- Header akan diisi oleh JavaScript -->
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr><td colspan="7" class="loading-text">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <div class="footer-info">
+                <p><i class="fas fa-microchip"></i> Data dikirim dari ESP32 setiap 5 detik | Realtime via Supabase</p>
+                <p id="footerInfo"><i class="fas fa-chart-simple"></i> Satuan: °C (suhu) | Kecepatan Blower: 1=LOW, 2=MEDIUM, 3=HIGH</p>
+            </div>
+            <div class="footer-time" id="currentTime">
+                <i class="far fa-clock"></i> --:--
+            </div>
         </div>
     </div>
 
-    <div class="gas-grid">
-        <div class="card card-co">
-            <div class="card-header"><h3>Carbon Monoxide</h3><span class="sensor-badge">MQ7</span></div>
-            <div class="card-value"><span id="coValue" class="value">---</span><span class="unit">mg/Nm³</span></div>
-            <div class="card-footer"><span class="label">Baku Mutu: ≤ 625 mg/Nm³</span><span id="coStatus" class="status-indicator"></span></div>
-        </div>
-        <div class="card card-so2">
-            <div class="card-header"><h3>Sulfur Dioxide</h3><span class="sensor-badge">MQ136</span></div>
-            <div class="card-value"><span id="so2Value" class="value">---</span><span class="unit">mg/Nm³</span></div>
-            <div class="card-footer"><span class="label">Baku Mutu: ≤ 210 mg/Nm³</span><span id="so2Status" class="status-indicator"></span></div>
-        </div>
-        <div class="card card-nox">
-            <div class="card-header"><h3>Nitrogen Oxides</h3><span class="sensor-badge">MQ135</span></div>
-            <div class="card-value"><span id="noxValue" class="value">---</span><span class="unit">mg/Nm³</span></div>
-            <div class="card-footer"><span class="label">Baku Mutu: ≤ 470 mg/Nm³</span><span id="noxStatus" class="status-indicator"></span></div>
-        </div>
-    </div>
-
-    <div class="combined-row">
-        <div class="card card-temp">
-            <div class="card-header"><h3>🌡️ Temperature</h3><span class="sensor-badge">MAX31855</span></div>
-            <div class="card-value"><span id="tempValue" class="value">---</span><span class="unit">°C</span></div>
-            <div class="card-footer"><span class="label">Thermocouple K-Type</span><span class="status-indicator"></span></div>
-        </div>
-        <div class="card card-blower">
-            <div class="card-header"><h3>🌀 Blower Speed</h3><span class="sensor-badge">Relay Control</span></div>
-            <div class="card-value"><span id="blowerValue" class="value">---</span><span class="unit"></span></div>
-            <div class="card-footer"><span class="label">Auto controlled by temperature</span><span id="blowerStatus" class="status-indicator"></span></div>
-        </div>
-    </div>
-
-    <div class="info-panel">
-        <div class="info-item"><span class="info-label">Last Update:</span><span id="lastUpdate" class="info-value">---</span></div>
-        <div class="info-item"><span class="info-label">Record ID:</span><span id="recordId" class="info-value">---</span></div>
-        <div class="info-item"><span class="info-label">Regulasi:</span><span class="info-value">PERMEN LHK No.70/2016</span></div>
-        <div class="info-item"><span class="info-label">Tabel:</span><span class="info-value">database_percobaan_satu</span></div>
-    </div>
-
-    <div class="chart-section">
-        <div class="chart-title">
-            <span>📈</span> Tren Emisi Gas (CO, SO₂, NOx) - 10 Data Terbaru
-            <button class="export-btn" onclick="exportToCSV()">📥 Export CSV</button>
-        </div>
-        <div class="single-chart-container">
-            <canvas id="emissionsChart" width="800" height="400"></canvas>
-        </div>
-        <div class="chart-legend-note">
-            <span><span class="legend-color" style="background: #e53e3e;"></span> CO (mg/Nm³)</span>
-            <span><span class="legend-color" style="background: #38a169;"></span> SO₂ (mg/Nm³)</span>
-            <span><span class="legend-color" style="background: #3182ce;"></span> NOx (mg/Nm³)</span>
-        </div>
-    </div>
-
-    <div class="history-section">
-        <h3><span>📋</span> Riwayat Data (10 Rekam Terbaru)</h3>
-        <div class="table-container">
-            <table id="historyTable">
-                <thead><tr><th>Time</th><th>CO (mg/Nm³)</th><th>SO₂ (mg/Nm³)</th><th>NOx (mg/Nm³)</th><th>Temp (°C)</th><th>Blower</th><th>Status CO</th></tr></thead>
-                <tbody id="historyBody"><tr><td colspan="7" class="loading-text">Memuat data historis...</td></tr></tbody>
-            </table>
-        </div>
-    </div>
-    <div class="footer">
-        <p>📡 Data dikirim dari ESP32 setiap 5 detik | 🔄 Realtime via Supabase | Tabel: database_percobaan_satu</p>
-        <p>📜 PERMEN LHK No. 70 Tahun 2016 | Satuan mg/Nm³ (25°C, 1 atm)</p>
-    </div>
-</div>
-
-<script>
-    // ================= KONFIGURASI SUPABASE =================
-    // Menggunakan kredensial yang sama dengan ESP32 (database_percobaan_satu)
-    const SUPABASE_URL = 'https://imirwkngfsbalpdtxsdl.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltaXJ3a25nZnNiYWxwZHR4c2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NjM5OTAsImV4cCI6MjA5MzQzOTk5MH0.ga1oO44cAFz8eduo9t8MOxQwrtlPSliQnoKdUNib1z4';
-    const TABLE_NAME = 'database_percobaan_satu';
-
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // DOM Elements
-    const coSpan = document.getElementById('coValue');
-    const so2Span = document.getElementById('so2Value');
-    const noxSpan = document.getElementById('noxValue');
-    const tempSpan = document.getElementById('tempValue');
-    const blowerSpan = document.getElementById('blowerValue');
-    const lastUpdateSpan = document.getElementById('lastUpdate');
-    const recordIdSpan = document.getElementById('recordId');
-    const coStatusSpan = document.getElementById('coStatus');
-    const so2StatusSpan = document.getElementById('so2Status');
-    const noxStatusSpan = document.getElementById('noxStatus');
-    const blowerStatusSpan = document.getElementById('blowerStatus');
-    const historyBody = document.getElementById('historyBody');
-    const connectionSpan = document.getElementById('connectionStatus');
-
-    let rawHistory = [];
-    let emissionsChart;
-
-    const LIMITS = { co: 625, so2: 210, nox: 470 };
-
-    // Helper update status
-    function updateEmissionStatus(value, limit, element) {
-        if (value === null || isNaN(value) || value === undefined) {
-            element.textContent = '---';
-            element.className = 'status-indicator';
-            return;
-        }
-        const val = parseFloat(value);
-        if (val <= limit) {
-            element.textContent = '✓ Normal';
-            element.className = 'status-indicator status-normal';
-        } else if (val <= limit * 1.3) {
-            element.textContent = '⚠️ Waspada';
-            element.className = 'status-indicator status-moderate';
-        } else {
-            element.textContent = '✗ Berlebih';
-            element.className = 'status-indicator status-warning';
-        }
-    }
-
-    function updateBlowerStatus(speed) {
-        if (speed === null || speed === undefined) {
-            blowerStatusSpan.textContent = '--';
-            blowerStatusSpan.className = 'status-indicator';
-            return;
-        }
-        const sp = parseInt(speed);
-        if (sp === 0) {
-            blowerStatusSpan.textContent = '⏹️ OFF';
-            blowerStatusSpan.className = 'status-indicator status-moderate';
-        } else if (sp === 1) {
-            blowerStatusSpan.textContent = '🐢 LOW (Pendinginan Maksimal)';
-            blowerStatusSpan.className = 'status-indicator';
-        } else if (sp === 2) {
-            blowerStatusSpan.textContent = '⚡ MEDIUM';
-            blowerStatusSpan.className = 'status-normal';
-        } else if (sp === 3) {
-            blowerStatusSpan.textContent = '💨 HIGH (Aliran Rendah)';
-            blowerStatusSpan.className = 'status-warning';
-        } else {
-            blowerStatusSpan.textContent = `${sp}%`;
-            blowerStatusSpan.className = 'status-indicator';
-        }
-    }
-
-    function initSingleChart() {
-        const ctx = document.getElementById('emissionsChart').getContext('2d');
-        emissionsChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [
-                    { label: 'CO (mg/Nm³)', data: [], borderColor: '#e53e3e', backgroundColor: 'rgba(229,62,62,0.05)', borderWidth: 2, tension: 0.2, fill: false, pointRadius: 3 },
-                    { label: 'SO₂ (mg/Nm³)', data: [], borderColor: '#38a169', backgroundColor: 'rgba(56,161,105,0.05)', borderWidth: 2, tension: 0.2, fill: false, pointRadius: 3 },
-                    { label: 'NOx (mg/Nm³)', data: [], borderColor: '#3182ce', backgroundColor: 'rgba(49,130,206,0.05)', borderWidth: 2, tension: 0.2, fill: false, pointRadius: 3 }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                interaction: { mode: 'index', intersect: false },
-                plugins: { tooltip: { mode: 'index', intersect: false }, legend: { position: 'top' } },
-                scales: { y: { beginAtZero: true, title: { display: true, text: 'Konsentrasi (mg/Nm³)' } } }
-            }
-        });
-    }
-
-    function updateSingleChart(historyData) {
-        if (!emissionsChart) return;
-        const latest10 = [...historyData].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10);
-        const sortedAsc = latest10.reverse();
-        const labels = sortedAsc.map(item => {
-            const d = new Date(item.created_at);
-            return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`;
-        });
-        emissionsChart.data.labels = labels;
-        emissionsChart.data.datasets[0].data = sortedAsc.map(item => item.co_mg);
-        emissionsChart.data.datasets[1].data = sortedAsc.map(item => item.so2_mg);
-        emissionsChart.data.datasets[2].data = sortedAsc.map(item => item.nox_mg);
-        emissionsChart.update();
-    }
-
-    function updateDashboardFromLatest(record) {
-        if (!record) return;
-        coSpan.innerText = (record.co_mg !== null) ? parseFloat(record.co_mg).toFixed(2) : '---';
-        so2Span.innerText = (record.so2_mg !== null) ? parseFloat(record.so2_mg).toFixed(2) : '---';
-        noxSpan.innerText = (record.nox_mg !== null) ? parseFloat(record.nox_mg).toFixed(2) : '---';
-        tempSpan.innerText = (record.suhu_celsius !== null) ? parseFloat(record.suhu_celsius).toFixed(1) : '---';
-        blowerSpan.innerText = (record.blower_status !== null) ? 
-            (record.blower_status === 1 ? 'LOW' : record.blower_status === 2 ? 'MEDIUM' : record.blower_status === 3 ? 'HIGH' : 'OFF') : '---';
-        
-        if (record.created_at) lastUpdateSpan.innerText = new Date(record.created_at).toLocaleString('id-ID');
-        if (record.id) recordIdSpan.innerText = record.id;
-        
-        updateEmissionStatus(record.co_mg, LIMITS.co, coStatusSpan);
-        updateEmissionStatus(record.so2_mg, LIMITS.so2, so2StatusSpan);
-        updateEmissionStatus(record.nox_mg, LIMITS.nox, noxStatusSpan);
-        updateBlowerStatus(record.blower_status);
-    }
-
-    function renderHistoryTable(data) {
-        if (!data || data.length === 0) {
-            historyBody.innerHTML = '<tr><td colspan="7" class="loading-text">Belum ada data, tunggu kiriman ESP32</td></tr>';
-            return;
-        }
-        const latestRecords = [...data].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10);
-        const rows = latestRecords.map(rec => {
-            const date = new Date(rec.created_at);
-            const timeStr = date.toLocaleString('id-ID', { hour12: false });
-            const coVal = (rec.co_mg !== null) ? parseFloat(rec.co_mg).toFixed(2) : '-';
-            const so2Val = (rec.so2_mg !== null) ? parseFloat(rec.so2_mg).toFixed(2) : '-';
-            const noxVal = (rec.nox_mg !== null) ? parseFloat(rec.nox_mg).toFixed(2) : '-';
-            const tempVal = (rec.suhu_celsius !== null) ? parseFloat(rec.suhu_celsius).toFixed(1) : '-';
-            let blowerText = '-';
-            if (rec.blower_status === 1) blowerText = 'LOW';
-            else if (rec.blower_status === 2) blowerText = 'MEDIUM';
-            else if (rec.blower_status === 3) blowerText = 'HIGH';
-            else if (rec.blower_status === 0) blowerText = 'OFF';
-            const statusCO = rec.status_co || (rec.co_mg <= LIMITS.co ? 'Memenuhi BM' : 'Tdk Memenuhi BM');
-            return `<tr><td>${timeStr}</td><td>${coVal}</td><td>${so2Val}</td><td>${noxVal}</td><td>${tempVal}</td><td><span class="blower-badge">${blowerText}</span></td><td>${statusCO}</td></tr>`;
-        }).join('');
-        historyBody.innerHTML = rows;
-    }
-    
-    async function fetchLatestHistory() {
-        try {
-            const { data, error } = await supabaseClient
-                .from(TABLE_NAME)
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(20);
-            
-            if (error) throw error;
-            if (data && data.length) {
-                rawHistory = [...data].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
-                renderHistoryTable(data);
-                updateDashboardFromLatest(data[0]);
-                updateSingleChart(rawHistory);
-                connectionSpan.innerHTML = '<span class="status-dot" style="background:#2ecc71;"></span> Terhubung ● Sinkron aktif';
-            } else {
-                connectionSpan.innerHTML = '<span class="status-dot" style="background:#facc15;"></span> Menunggu data dari ESP32...';
-                if(emissionsChart) emissionsChart.data.datasets.forEach(ds => ds.data = []);
-                if(emissionsChart) emissionsChart.update();
-            }
-        } catch (err) {
-            console.error("Fetch error:", err);
-            connectionSpan.innerHTML = '<span class="status-dot" style="background:#e74c3c;"></span> Gagal koneksi Supabase';
-            historyBody.innerHTML = '<tr><td colspan="7" class="loading-text">Koneksi database gagal. Periksa konfigurasi.</td></tr>';
-        }
-    }
-    
-    function subscribeRealtime() {
-        const channel = supabaseClient
-            .channel('database_percobaan_satu-realtime')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: TABLE_NAME }, (payload) => {
-                console.log("New data realtime:", payload.new);
-                fetchLatestHistory();
-            })
-            .subscribe((status) => {
-                if (status === 'SUBSCRIBED') console.log("Realtime subscription aktif untuk", TABLE_NAME);
-            });
-    }
-    
-    async function exportToCSV() {
-        try {
-            const { data, error } = await supabaseClient
-                .from(TABLE_NAME)
-                .select('*')
-                .order('created_at', { ascending: false });
-            if (error) throw error;
-            if (!data || data.length === 0) {
-                alert('Belum ada data untuk diexport');
-                return;
-            }
-            let csvContent = "ID,Timestamp,CO (mg/Nm³),SO₂ (mg/Nm³),NOx (mg/Nm³),Temperature (°C),Blower Status,Status CO,Status SO2,Status NOx\n";
-            data.forEach(row => {
-                csvContent += `${row.id},${row.created_at},${row.co_mg},${row.so2_mg},${row.nox_mg},${row.suhu_celsius},${row.blower_status},${row.status_co || ''},${row.status_so2 || ''},${row.status_nox || ''}\n`;
-            });
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.href = url;
-            link.setAttribute('download', `emisi_data_${new Date().toISOString().slice(0,19)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            alert(`Berhasil export ${data.length} data ke CSV!`);
-        } catch (err) {
-            console.error("Export error:", err);
-            alert("Gagal export data");
-        }
-    }
-    
-    window.exportToCSV = exportToCSV;
-    
-    async function initDashboard() {
-        initSingleChart();
-        await fetchLatestHistory();
-        subscribeRealtime();
-        setInterval(() => fetchLatestHistory(), 30000);
-    }
-    
-    document.addEventListener('DOMContentLoaded', initDashboard);
-</script>
+    <script src="script.js"></script>
 </body>
 </html>

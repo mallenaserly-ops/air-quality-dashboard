@@ -1,91 +1,195 @@
 // script.js - Air Quality Dashboard with Supabase Realtime
-// PERMEN LHK No. 70 Tahun 2016 - Updated with Blower Speed
+// Mode Switch Tabel: Suhu & Blower ATAU Gas (CO, NOx, NH3)
 
 // ============================================================
 // KONFIGURASI SUPABASE
 // ============================================================
 const APP_SUPABASE_URL = 'https://imirwkngfsbalpdtxsdl.supabase.co';
 const APP_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltaXJ3a25nZnNiYWxwZHR4c2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NjM5OTAsImV4cCI6MjA5MzQzOTk5MH0.ga1oO44cAFz8eduo9t8MOxQwrtlPSliQnoKdUNib1z4';
-const APP_TABLE_NAME = 'database_percobaa_satu';
 
 // ============================================================
-// GLOBAL VARIABLES
+// TABEL
 // ============================================================
+const TABLES = {
+    SUHU: 'monitoring_suhu',
+    GAS: 'monitoring_gas'
+};
+
+// ============================================================
+// BATAS MAKSIMAL (Hanya untuk Gas)
+// ============================================================
+const BATAS_EMISI = {
+    co: 546,
+    nox: 250,
+    nh3: 50
+};
+
+// ============================================================
+// KONFIGURASI
+// ============================================================
+const AUTO_REFRESH_INTERVAL = 10000;
+let autoRefreshTimer = null;
 let supabaseClient = null;
-let allSensorData = [];
-let latestSensorData = null;
+let currentTable = TABLES.SUHU;
+let allData = [];
+let latestData = null;
 let realtimeChannel = null;
+let charts = {};
 
 // ============================================================
-// FUNGSI STATUS EMISI (PERMEN LHK 70/2016)
+// FUNGSI STATUS (Hanya untuk Gas)
 // ============================================================
 function getStatus(value, parameter) {
     if (value === null || value === undefined || value === '---') {
-        return { class: '', text: 'No Data', detail: 'Tidak ada data' };
+        return { class: 'loading', text: 'No Data', detail: 'Tidak ada data' };
     }
-    
-    // CO - Baku Mutu: 625 mg/Nm³
+
     if (parameter === 'co') {
-        if (value <= 625) {
-            return { class: 'good', text: 'Memenuhi BM', detail: '≤ 625 mg/Nm³' };
+        if (value <= BATAS_EMISI.co) {
+            return { class: 'good', text: 'NORMAL', detail: `≤ ${BATAS_EMISI.co} ppm` };
         } else {
-            return { class: 'danger', text: 'Tdk Memenuhi BM', detail: '> 625 mg/Nm³' };
+            return { class: 'danger', text: 'ALERT!', detail: `> ${BATAS_EMISI.co} ppm` };
         }
     }
-    
-    // SO2 - Baku Mutu: 210 mg/Nm³
-    if (parameter === 'so2') {
-        if (value <= 210) {
-            return { class: 'good', text: 'Memenuhi BM', detail: '≤ 210 mg/Nm³' };
-        } else {
-            return { class: 'danger', text: 'Tdk Memenuhi BM', detail: '> 210 mg/Nm³' };
-        }
-    }
-    
-    // NOx - Baku Mutu: 470 mg/Nm³
+
     if (parameter === 'nox') {
-        if (value <= 470) {
-            return { class: 'good', text: 'Memenuhi BM', detail: '≤ 470 mg/Nm³' };
+        if (value <= BATAS_EMISI.nox) {
+            return { class: 'good', text: 'NORMAL', detail: `≤ ${BATAS_EMISI.nox} ppm` };
         } else {
-            return { class: 'danger', text: 'Tdk Memenuhi BM', detail: '> 470 mg/Nm³' };
+            return { class: 'danger', text: 'ALERT!', detail: `> ${BATAS_EMISI.nox} ppm` };
         }
     }
-    
-    return { class: 'good', text: 'Memenuhi BM', detail: '' };
+
+    if (parameter === 'nh3') {
+        if (value <= BATAS_EMISI.nh3) {
+            return { class: 'good', text: 'NORMAL', detail: `≤ ${BATAS_EMISI.nh3} ppm` };
+        } else {
+            return { class: 'danger', text: 'ALERT!', detail: `> ${BATAS_EMISI.nh3} ppm` };
+        }
+    }
+
+    return { class: 'good', text: 'NORMAL', detail: '' };
 }
 
 // ============================================================
-// FUNGSI FORMAT BLOWER SPEED
+// FUNGSI BLOWER
 // ============================================================
 function getBlowerInfo(speed) {
+    if (speed === null || speed === undefined) {
+        return { text: 'No Data', class: '', display: '---', description: 'Tidak ada data' };
+    }
     if (speed === 1) {
-        return { 
-            text: 'LOW', 
-            class: 'blower-low', 
-            display: 'LOW SPEED (Pendingin Maksimal)',
-            description: 'Suhu > 300°C → Pendinginan maksimal'
-        };
+        return { text: 'LOW', class: 'blower-low', display: '1 (LOW)', description: 'Kecepatan rendah' };
     } else if (speed === 2) {
-        return { 
-            text: 'MEDIUM', 
-            class: 'blower-medium', 
-            display: 'MEDIUM SPEED (Normal)',
-            description: 'Suhu 100-300°C → Kecepatan normal'
-        };
+        return { text: 'MEDIUM', class: 'blower-medium', display: '2 (MEDIUM)', description: 'Kecepatan sedang' };
     } else if (speed === 3) {
-        return { 
-            text: 'HIGH', 
-            class: 'blower-high', 
-            display: 'HIGH SPEED (Aliran Rendah)',
-            description: 'Suhu < 100°C → Aliran udara minimal'
-        };
+        return { text: 'HIGH', class: 'blower-high', display: '3 (HIGH)', description: 'Kecepatan tinggi' };
     } else {
-        return { 
-            text: 'OFF', 
-            class: '', 
-            display: 'OFF',
-            description: 'Blower mati'
-        };
+        return { text: `${speed}`, class: '', display: `Kecepatan ${speed}`, description: `Kecepatan ${speed}` };
+    }
+}
+
+// ============================================================
+// RENDER CARDS
+// ============================================================
+function renderCards() {
+    const container = document.getElementById('cardsContainer');
+    const isSuhu = currentTable === TABLES.SUHU;
+
+    if (isSuhu) {
+        // Mode Suhu: Hanya 2 card (Suhu & Blower)
+        container.innerHTML = `
+            <div class="emission-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <!-- Card Suhu -->
+                <div class="card card-temp">
+                    <div class="card-icon">
+                        <i class="fas fa-thermometer-half"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>🌡️ Temperature</h3>
+                        <div class="value-container">
+                            <span class="card-value" id="suhuValue">--</span>
+                            <span class="card-unit">°C</span>
+                        </div>
+                        <p style="font-size:0.7rem;color:#6b8c5c;">Thermocouple K-Type | MAX31855</p>
+                    </div>
+                </div>
+
+                <!-- Card Blower -->
+                <div class="card card-blower">
+                    <div class="card-icon">
+                        <i class="fas fa-fan"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>🔄 Blower Speed</h3>
+                        <div class="value-container">
+                            <span class="card-value" id="blowerValueCard">--</span>
+                            <span class="card-unit" id="blowerUnitCard">Kecepatan</span>
+                        </div>
+                        <div id="blowerStatusCard" class="blower-status-text">Menunggu data...</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        // Mode Gas: 3 card (CO, NOx, NH3)
+        container.innerHTML = `
+            <div class="emission-grid">
+                <!-- Card CO -->
+                <div class="card card-co">
+                    <div class="card-icon">
+                        <i class="fas fa-smog"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>💨 Carbon Monoxide (CO)</h3>
+                        <div class="value-container">
+                            <span class="card-value" id="coValue">--</span>
+                            <span class="card-unit">ppm</span>
+                        </div>
+                        <div class="card-bm">Batas Maks: 546 ppm</div>
+                        <div class="card-status" id="coStatus">
+                            <span class="status-badge loading">Memuat...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card NOx -->
+                <div class="card card-so2">
+                    <div class="card-icon">
+                        <i class="fas fa-wind"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>🧪 Nitrogen Oxides (NOx)</h3>
+                        <div class="value-container">
+                            <span class="card-value" id="noxValue">--</span>
+                            <span class="card-unit">ppm</span>
+                        </div>
+                        <div class="card-bm">Batas Maks: 250 ppm</div>
+                        <div class="card-status" id="noxStatus">
+                            <span class="status-badge loading">Memuat...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card NH3 -->
+                <div class="card card-nox">
+                    <div class="card-icon">
+                        <i class="fas fa-vial"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>🧪 Ammonia (NH₃)</h3>
+                        <div class="value-container">
+                            <span class="card-value" id="nh3Value">--</span>
+                            <span class="card-unit">ppm</span>
+                        </div>
+                        <div class="card-bm">Batas Maks: 50 ppm</div>
+                        <div class="card-status" id="nh3Status">
+                            <span class="status-badge loading">Memuat...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }
 
@@ -93,91 +197,180 @@ function getBlowerInfo(speed) {
 // UPDATE DASHBOARD
 // ============================================================
 function updateDashboard(data) {
-    if (!data) {
-        console.warn('No data to update dashboard');
-        return;
+    if (!data) return;
+
+    const isSuhu = currentTable === TABLES.SUHU;
+
+    if (isSuhu) {
+        // === MODE SUHU ===
+        const suhu = data.suhu_celsius !== undefined ? parseFloat(data.suhu_celsius) : '---';
+        const blower = data.blower_speed !== undefined ? data.blower_speed : null;
+
+        // Update card suhu
+        const suhuEl = document.getElementById('suhuValue');
+        if (suhuEl) {
+            suhuEl.textContent = typeof suhu === 'number' ? suhu.toFixed(1) : suhu;
+        }
+
+        // Update card blower
+        const blowerEl = document.getElementById('blowerValueCard');
+        const blowerUnit = document.getElementById('blowerUnitCard');
+        const blowerStatus = document.getElementById('blowerStatusCard');
+        
+        if (blowerEl && blowerStatus) {
+            if (blower !== null) {
+                const info = getBlowerInfo(blower);
+                blowerEl.textContent = info.display;
+                if (blowerUnit) blowerUnit.textContent = 'Kecepatan';
+                blowerStatus.className = `blower-status-text ${info.class}`;
+                blowerStatus.textContent = `🔄 ${info.text} - ${info.description}`;
+            } else {
+                blowerEl.textContent = '---';
+                if (blowerUnit) blowerUnit.textContent = 'Kecepatan';
+                blowerStatus.className = 'blower-status-text';
+                blowerStatus.textContent = '⏳ Menunggu data blower...';
+            }
+        }
+
+        // Update chart title
+        document.getElementById('chartTitle').textContent = 'Tren Suhu (20 Data Terbaru)';
+        document.getElementById('historyTitle').textContent = 'Riwayat Suhu & Blower (10 Rekam Terbaru)';
+        document.getElementById('footerInfo').innerHTML = '<i class="fas fa-chart-simple"></i> Satuan: °C (suhu) | Kecepatan Blower: 1=LOW, 2=MEDIUM, 3=HIGH';
+        document.getElementById('tableInfo').innerHTML = '<i class="fas fa-info-circle"></i> Menampilkan data suhu & blower';
+
+    } else {
+        // === MODE GAS ===
+        const co = data.nilai_co_ppm !== undefined ? parseFloat(data.nilai_co_ppm) : '---';
+        const nox = data.nilai_nox_ppm !== undefined ? parseFloat(data.nilai_nox_ppm) : '---';
+        const nh3 = data.nilai_nh3_ppm !== undefined ? parseFloat(data.nilai_nh3_ppm) : '---';
+
+        // CO
+        const coEl = document.getElementById('coValue');
+        if (coEl) {
+            coEl.textContent = typeof co === 'number' ? co.toFixed(2) : co;
+            const status = getStatus(co, 'co');
+            const statusEl = document.getElementById('coStatus');
+            if (statusEl) {
+                statusEl.className = `status-badge ${status.class}`;
+                statusEl.innerHTML = `<i class="fas ${status.class === 'danger' ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${status.text}`;
+            }
+        }
+
+        // NOx
+        const noxEl = document.getElementById('noxValue');
+        if (noxEl) {
+            noxEl.textContent = typeof nox === 'number' ? nox.toFixed(2) : nox;
+            const status = getStatus(nox, 'nox');
+            const statusEl = document.getElementById('noxStatus');
+            if (statusEl) {
+                statusEl.className = `status-badge ${status.class}`;
+                statusEl.innerHTML = `<i class="fas ${status.class === 'danger' ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${status.text}`;
+            }
+        }
+
+        // NH3
+        const nh3El = document.getElementById('nh3Value');
+        if (nh3El) {
+            nh3El.textContent = typeof nh3 === 'number' ? nh3.toFixed(2) : nh3;
+            const status = getStatus(nh3, 'nh3');
+            const statusEl = document.getElementById('nh3Status');
+            if (statusEl) {
+                statusEl.className = `status-badge ${status.class}`;
+                statusEl.innerHTML = `<i class="fas ${status.class === 'danger' ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${status.text}`;
+            }
+        }
+
+        // Update chart title
+        document.getElementById('chartTitle').textContent = 'Tren Emisi Gas (20 Data Terbaru)';
+        document.getElementById('historyTitle').textContent = 'Riwayat Emisi Gas (10 Rekam Terbaru)';
+        document.getElementById('footerInfo').innerHTML = '<i class="fas fa-chart-simple"></i> Satuan: ppm (CO/NOx/NH₃) | Batas: CO=546 | NOx=250 | NH₃=50';
+        document.getElementById('tableInfo').innerHTML = '<i class="fas fa-info-circle"></i> Menampilkan data gas (CO, NOx, NH₃)';
     }
-    
-    console.log('Updating dashboard with:', data);
-    
-    // Ambil nilai dari properti
-    const coValue = data.co !== undefined ? parseFloat(data.co) : '---';
-    const so2Value = data.so2 !== undefined ? parseFloat(data.so2) : '---';
-    const noxValue = data.nox !== undefined ? parseFloat(data.nox) : '---';
-    const tempValue = data.suhu !== undefined ? parseFloat(data.suhu) : '---';
-    const blowerValue = data.blower_speed !== undefined ? data.blower_speed : null;
-    
-    // Update CO Card
-    const coElement = document.getElementById('coValue');
-    if (coElement) {
-        coElement.textContent = typeof coValue === 'number' ? coValue.toFixed(4) : coValue;
-        const coStatus = getStatus(coValue, 'co');
-        const coStatusEl = document.getElementById('coStatus');
-        if (coStatusEl) {
-            coStatusEl.className = `status-indicator ${coStatus.class}`;
-            coStatusEl.innerHTML = ` ${coStatus.text}`;
-            coStatusEl.title = coStatus.detail;
+
+    // Update timestamp di footer info (jika ada)
+    if (data.timestamp) {
+        const formattedDate = new Date(data.timestamp).toLocaleString('id-ID', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        if (lastUpdateEl) {
+            lastUpdateEl.textContent = formattedDate;
         }
     }
-    
-    // Update SO2 Card
-    const so2Element = document.getElementById('so2Value');
-    if (so2Element) {
-        so2Element.textContent = typeof so2Value === 'number' ? so2Value.toFixed(4) : so2Value;
-        const so2Status = getStatus(so2Value, 'so2');
-        const so2StatusEl = document.getElementById('so2Status');
-        if (so2StatusEl) {
-            so2StatusEl.className = `status-indicator ${so2Status.class}`;
-            so2StatusEl.innerHTML = ` ${so2Status.text}`;
-            so2StatusEl.title = so2Status.detail;
-        }
+}
+
+// ============================================================
+// RENDER CHARTS
+// ============================================================
+function renderCharts() {
+    const grid = document.getElementById('chartsGrid');
+    const isSuhu = currentTable === TABLES.SUHU;
+
+    if (isSuhu) {
+        // Mode Suhu: Hanya 1 grafik (Suhu)
+        grid.innerHTML = `
+            <div class="chart-card" style="grid-column: 1 / -1; max-width: 600px; margin: 0 auto; width: 100%;">
+                <h4><i class="fas fa-thermometer-half"></i> Suhu (°C)</h4>
+                <canvas id="chart1"></canvas>
+            </div>
+            <div style="display:none;"><canvas id="chart2"></canvas></div>
+            <div style="display:none;"><canvas id="chart3"></canvas></div>
+        `;
+    } else {
+        // Mode Gas: 3 grafik (CO, NOx, NH3)
+        grid.innerHTML = `
+            <div class="chart-card">
+                <h4><i class="fas fa-smog"></i> CO (ppm)</h4>
+                <canvas id="chart1"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4><i class="fas fa-wind"></i> NOx (ppm)</h4>
+                <canvas id="chart2"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4><i class="fas fa-vial"></i> NH₃ (ppm)</h4>
+                <canvas id="chart3"></canvas>
+            </div>
+        `;
     }
-    
-    // Update NOx Card
-    const noxElement = document.getElementById('noxValue');
-    if (noxElement) {
-        noxElement.textContent = typeof noxValue === 'number' ? noxValue.toFixed(4) : noxValue;
-        const noxStatus = getStatus(noxValue, 'nox');
-        const noxStatusEl = document.getElementById('noxStatus');
-        if (noxStatusEl) {
-            noxStatusEl.className = `status-indicator ${noxStatus.class}`;
-            noxStatusEl.innerHTML = ` ${noxStatus.text}`;
-            noxStatusEl.title = noxStatus.detail;
-        }
-    }
-    
-    // Update Temperature Card
-    const tempElement = document.getElementById('tempValue');
-    if (tempElement) {
-        tempElement.textContent = typeof tempValue === 'number' ? tempValue.toFixed(1) : tempValue;
-    }
-    
-    // Update Blower Card
-    const blowerElement = document.getElementById('blowerValue');
-    const blowerStatusEl = document.getElementById('blowerStatus');
-    if (blowerElement && blowerStatusEl) {
-        if (blowerValue !== null && blowerValue !== undefined) {
-            const blowerInfo = getBlowerInfo(blowerValue);
-            blowerElement.textContent = blowerInfo.display;
-            blowerStatusEl.className = `status-indicator ${blowerInfo.class}`;
-            blowerStatusEl.innerHTML = ` ${blowerInfo.text}`;
-            blowerStatusEl.title = blowerInfo.description;
-        } else {
-            blowerElement.textContent = '---';
-            blowerStatusEl.className = 'status-indicator';
-            blowerStatusEl.innerHTML = ' No Data';
-        }
-    }
-    
-    // Update timestamp & record ID
-    const lastUpdateEl = document.getElementById('lastUpdate');
-    if (lastUpdateEl && data.created_at) {
-        lastUpdateEl.textContent = new Date(data.created_at).toLocaleString('id-ID');
-    }
-    
-    const recordIdEl = document.getElementById('recordId');
-    if (recordIdEl && data.id) {
-        recordIdEl.textContent = data.id;
+}
+
+// ============================================================
+// RENDER HISTORY HEADER
+// ============================================================
+function renderHistoryHeader() {
+    const thead = document.getElementById('historyHeader');
+    const isSuhu = currentTable === TABLES.SUHU;
+
+    if (isSuhu) {
+        thead.innerHTML = `
+            <tr>
+                <th>Waktu</th>
+                <th>Suhu (°C)</th>
+                <th>Blower</th>
+                <th style="display:none;">CO</th>
+                <th style="display:none;">NOx</th>
+                <th style="display:none;">NH₃</th>
+                <th>Status</th>
+            </tr>
+        `;
+    } else {
+        thead.innerHTML = `
+            <tr>
+                <th>Waktu</th>
+                <th>CO (ppm)</th>
+                <th>NOx (ppm)</th>
+                <th>NH₃ (ppm)</th>
+                <th style="display:none;">Suhu</th>
+                <th style="display:none;">Blower</th>
+                <th>Status</th>
+            </tr>
+        `;
     }
 }
 
@@ -187,74 +380,192 @@ function updateDashboard(data) {
 function updateHistoryTable(dataArray) {
     const tbody = document.getElementById('historyBody');
     if (!tbody) return;
-    
+
     if (!dataArray || dataArray.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="loading-text">No data available</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="loading-text">Tidak ada data</td></tr>';
         return;
     }
-    
-    const latest10 = [...dataArray].reverse().slice(0, 10);
-    
-    tbody.innerHTML = latest10.map(item => {
-        const blowerInfo = getBlowerInfo(item.blower_speed);
-        return `
-            <tr>
-                <td>${new Date(item.created_at).toLocaleString('id-ID')}</td>
-                <td>${typeof item.co === 'number' ? item.co.toFixed(4) : item.co}</td>
-                <td>${typeof item.so2 === 'number' ? item.so2.toFixed(4) : item.so2}</td>
-                <td>${typeof item.nox === 'number' ? item.nox.toFixed(4) : item.nox}</td>
-                <td>${typeof item.suhu === 'number' ? item.suhu.toFixed(1) : item.suhu}</td>
-                <td><span class="blower-badge ${blowerInfo.class}">${blowerInfo.text}</span></td>
-            </tr>
-        `;
-    }).join('');
-}
 
-// ============================================================
-// UPDATE CONNECTION STATUS
-// ============================================================
-function updateConnectionStatus(isConnected, errorMsg = '') {
-    const badge = document.getElementById('connectionStatus');
-    if (!badge) return;
-    
-    if (isConnected) {
-        badge.innerHTML = '<span class="status-dot connected"></span> Connected to Supabase (Realtime active)';
-        badge.style.background = 'rgba(46, 204, 113, 0.2)';
+    const isSuhu = currentTable === TABLES.SUHU;
+    const latest10 = [...dataArray].reverse().slice(0, 10);
+
+    if (isSuhu) {
+        // Mode Suhu: Tampilkan suhu & blower
+        tbody.innerHTML = latest10.map(item => {
+            const suhu = item.suhu_celsius !== undefined ? parseFloat(item.suhu_celsius) : null;
+            const blower = item.blower_speed !== undefined ? item.blower_speed : null;
+            const isAlert = suhu !== null && suhu > 45;
+            const blowerInfo = getBlowerInfo(blower);
+
+            return `
+                <tr class="${isAlert ? 'alert-row' : ''}">
+                    <td>${new Date(item.timestamp).toLocaleString('id-ID')}</td>
+                    <td class="${isAlert ? 'danger-text' : 'normal-text'}">
+                        ${suhu !== null ? suhu.toFixed(1) : '-'} °C
+                    </td>
+                    <td><span class="blower-badge ${blowerInfo.class}">${blower !== null ? blowerInfo.text : '-'}</span></td>
+                    <td style="display:none;">-</td>
+                    <td style="display:none;">-</td>
+                    <td style="display:none;">-</td>
+                    <td>
+                        ${isAlert 
+                            ? '<span class="status-badge-table danger">⚠️ ALERT</span>' 
+                            : '<span class="status-badge-table good">✓ NORMAL</span>'}
+                    </td>
+                </tr>
+            `;
+        }).join('');
     } else {
-        badge.innerHTML = `<span class="status-dot error"></span> Error: ${errorMsg || 'Disconnected'}`;
-        badge.style.background = 'rgba(231, 76, 60, 0.2)';
+        // Mode Gas: Tampilkan CO, NOx, NH3
+        tbody.innerHTML = latest10.map(item => {
+            const co = item.nilai_co_ppm !== undefined ? parseFloat(item.nilai_co_ppm) : null;
+            const nox = item.nilai_nox_ppm !== undefined ? parseFloat(item.nilai_nox_ppm) : null;
+            const nh3 = item.nilai_nh3_ppm !== undefined ? parseFloat(item.nilai_nh3_ppm) : null;
+            
+            const coStatus = co !== null ? getStatus(co, 'co') : { class: '' };
+            const noxStatus = nox !== null ? getStatus(nox, 'nox') : { class: '' };
+            const nh3Status = nh3 !== null ? getStatus(nh3, 'nh3') : { class: '' };
+            
+            const isAlert = coStatus.class === 'danger' || noxStatus.class === 'danger' || nh3Status.class === 'danger';
+
+            return `
+                <tr class="${isAlert ? 'alert-row' : ''}">
+                    <td>${new Date(item.timestamp).toLocaleString('id-ID')}</td>
+                    <td class="${coStatus.class === 'danger' ? 'danger-text' : 'normal-text'}">
+                        ${co !== null ? co.toFixed(2) : '-'}
+                    </td>
+                    <td class="${noxStatus.class === 'danger' ? 'danger-text' : 'normal-text'}">
+                        ${nox !== null ? nox.toFixed(2) : '-'}
+                    </td>
+                    <td class="${nh3Status.class === 'danger' ? 'danger-text' : 'normal-text'}">
+                        ${nh3 !== null ? nh3.toFixed(2) : '-'}
+                    </td>
+                    <td style="display:none;">-</td>
+                    <td style="display:none;">-</td>
+                    <td>
+                        ${isAlert 
+                            ? '<span class="status-badge-table danger">⚠️ ALERT</span>' 
+                            : '<span class="status-badge-table good">✓ NORMAL</span>'}
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 }
 
 // ============================================================
-// FETCH DATA AWAL
+// UPDATE CHARTS
 // ============================================================
-async function fetchInitialData() {
+function updateCharts(dataArray) {
+    if (!dataArray || dataArray.length === 0) {
+        console.warn('No data for charts');
+        return;
+    }
+
+    const isSuhu = currentTable === TABLES.SUHU;
+    const latest20 = [...dataArray].reverse().slice(0, 20);
+    const labels = latest20.map(item => 
+        new Date(item.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit', second:'2-digit'})
+    );
+
+    // Destroy existing charts
+    Object.keys(charts).forEach(key => {
+        if (charts[key]) {
+            charts[key].destroy();
+            delete charts[key];
+        }
+    });
+
+    if (isSuhu) {
+        // Mode Suhu: Hanya chart suhu
+        const suhuData = latest20.map(item => item.suhu_celsius || 0);
+        createChart('chart1', 'Suhu (°C)', suhuData, labels, '#e74c3c', 0);
+    } else {
+        // Mode Gas: CO, NOx, NH3
+        const coData = latest20.map(item => item.nilai_co_ppm || 0);
+        const noxData = latest20.map(item => item.nilai_nox_ppm || 0);
+        const nh3Data = latest20.map(item => item.nilai_nh3_ppm || 0);
+
+        createChart('chart1', 'CO (ppm)', coData, labels, '#e74c3c', BATAS_EMISI.co);
+        createChart('chart2', 'NOx (ppm)', noxData, labels, '#f39c12', BATAS_EMISI.nox);
+        createChart('chart3', 'NH₃ (ppm)', nh3Data, labels, '#8e44ad', BATAS_EMISI.nh3);
+    }
+}
+
+function createChart(canvasId, label, data, labels, color, threshold) {
+    const ctx = document.getElementById(canvasId)?.getContext('2d');
+    if (!ctx) return;
+
+    charts[canvasId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: label,
+                data: data,
+                borderColor: color,
+                backgroundColor: color + '33',
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: threshold > 0 ? data.map(v => v > threshold ? '#e74c3c' : '#2ecc71') : '#2ecc71',
+                pointBorderColor: '#fff',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let value = context.raw;
+                            let status = threshold > 0 && value > threshold ? '⚠️ MELEBIHI BATAS!' : '✓ NORMAL';
+                            return `${context.dataset.label}: ${value.toFixed(2)} ${status}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    title: { display: true, text: label },
+                    min: 0
+                }
+            }
+        }
+    });
+}
+
+// ============================================================
+// FETCH DATA
+// ============================================================
+async function fetchData() {
     try {
-        console.log('📥 Fetching initial data from Supabase...');
-        
+        console.log('📥 Fetching data from:', currentTable);
+
         const { data, error } = await supabaseClient
-            .from(APP_TABLE_NAME)
+            .from(currentTable)
             .select('*')
-            .order('created_at', { ascending: true });
-        
+            .order('timestamp', { ascending: true });
+
         if (error) throw error;
-        
+
         if (data && data.length > 0) {
-            allSensorData = data;
-            latestSensorData = data[data.length - 1];
-            console.log('Sample data structure:', latestSensorData);
-            console.log('Available columns:', Object.keys(latestSensorData));
-            updateDashboard(latestSensorData);
-            updateHistoryTable(allSensorData);
-            console.log(`✅ Loaded ${data.length} records`);
+            allData = data;
+            latestData = data[data.length - 1];
+            console.log('✅ Loaded', data.length, 'records');
+            updateDashboard(latestData);
+            updateHistoryTable(allData);
+            updateCharts(allData);
             updateConnectionStatus(true);
         } else {
-            console.log('⚠️ No data found in database');
+            console.warn('⚠️ No data found in', currentTable);
             updateConnectionStatus(true);
             updateHistoryTable([]);
         }
-        
+
     } catch (error) {
         console.error('❌ Error fetching data:', error);
         updateConnectionStatus(false, error.message);
@@ -262,63 +573,194 @@ async function fetchInitialData() {
 }
 
 // ============================================================
-// SETUP REALTIME SUBSCRIPTION
+// SWITCH TABLE
+// ============================================================
+async function switchTable(tableName) {
+    if (tableName === currentTable) return;
+
+    console.log(`🔄 Switching from ${currentTable} to ${tableName}`);
+    currentTable = tableName;
+
+    // Re-render UI
+    renderCards();
+    renderCharts();
+    renderHistoryHeader();
+
+    // Destroy all charts
+    Object.keys(charts).forEach(key => {
+        if (charts[key]) {
+            charts[key].destroy();
+            delete charts[key];
+        }
+    });
+
+    // Setup new realtime subscription
+    setupRealtimeSubscription();
+
+    // Fetch new data
+    await fetchData();
+}
+
+// ============================================================
+// CONNECTION STATUS
+// ============================================================
+function updateConnectionStatus(isConnected, errorMsg = '') {
+    const badge = document.getElementById('connectionStatus');
+    if (!badge) return;
+
+    const tableName = currentTable === TABLES.SUHU ? 'Suhu' : 'Gas';
+
+    if (isConnected) {
+        badge.innerHTML = `<span class="status-dot connected"></span> Terhubung ● Tabel: ${tableName} ● Auto-refresh: 10s`;
+        badge.style.background = 'rgba(46, 204, 113, 0.2)';
+        badge.style.color = '#2e7d32';
+    } else {
+        badge.innerHTML = `<span class="status-dot error"></span> Error: ${errorMsg || 'Disconnected'}`;
+        badge.style.background = 'rgba(231, 76, 60, 0.2)';
+        badge.style.color = '#c62828';
+    }
+}
+
+// ============================================================
+// AUTO-REFRESH
+// ============================================================
+async function autoRefreshData() {
+    try {
+        const { data, error } = await supabaseClient
+            .from(currentTable)
+            .select('*')
+            .order('timestamp', { ascending: false })
+            .limit(50);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            const sortedData = [...data].reverse();
+            const hasNewData = allData.length !== sortedData.length ||
+                (allData[allData.length - 1]?.id !== sortedData[sortedData.length - 1]?.id);
+
+            if (hasNewData) {
+                console.log('📡 New data detected!');
+                allData = sortedData;
+                latestData = sortedData[sortedData.length - 1];
+                updateDashboard(latestData);
+                updateHistoryTable(allData);
+                updateCharts(allData);
+                flashDataUpdate();
+            }
+        }
+    } catch (error) {
+        console.error('❌ Auto-refresh error:', error);
+    }
+}
+
+function startAutoRefresh() {
+    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+    autoRefreshTimer = setInterval(autoRefreshData, AUTO_REFRESH_INTERVAL);
+    console.log(`✅ Auto-refresh started: every ${AUTO_REFRESH_INTERVAL / 1000}s`);
+}
+
+// ============================================================
+// REALTIME SUBSCRIPTION
 // ============================================================
 function setupRealtimeSubscription() {
-    console.log('🔌 Setting up realtime subscription...');
-    
+    console.log('🔌 Setting up realtime subscription for:', currentTable);
+
     if (realtimeChannel) {
         supabaseClient.removeChannel(realtimeChannel);
     }
-    
+
     realtimeChannel = supabaseClient
-        .channel('emisi-data-changes')
+        .channel(`table-changes-${currentTable}`)
         .on('postgres_changes', {
             event: 'INSERT',
             schema: 'public',
-            table: APP_TABLE_NAME
+            table: currentTable
         }, (payload) => {
-            console.log('📡 New data received!', payload.new);
-            
-            allSensorData.push(payload.new);
-            latestSensorData = payload.new;
+            console.log('📡 Real-time new data!', payload.new);
+            allData.push(payload.new);
+            latestData = payload.new;
             updateDashboard(payload.new);
-            updateHistoryTable(allSensorData);
-            
-            // Flash effect pada cards
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(card => {
-                card.style.transition = 'all 0.3s ease';
-                card.style.boxShadow = '0 0 20px rgba(46, 204, 113, 0.5)';
-                setTimeout(() => {
-                    card.style.boxShadow = '';
-                }, 500);
-            });
+            updateHistoryTable(allData);
+            updateCharts(allData);
+            flashDataUpdate();
         })
         .subscribe((status) => {
             console.log('Subscription status:', status);
-            if (status === 'SUBSCRIBED') {
-                console.log('✅ Realtime subscription active!');
-            }
         });
 }
+
+// ============================================================
+// FLASH EFFECT
+// ============================================================
+function flashDataUpdate() {
+    const container = document.querySelector('.dashboard-container');
+    if (container) {
+        container.style.transition = 'all 0.3s ease';
+        container.style.boxShadow = '0 0 30px rgba(46, 204, 113, 0.5)';
+        setTimeout(() => { container.style.boxShadow = ''; }, 500);
+    }
+}
+
+// ============================================================
+// UPDATE TIME
+// ============================================================
+function updateTopTimestamp() {
+    const now = new Date();
+    const currentTimeEl = document.getElementById('currentTime');
+    if (currentTimeEl) {
+        const timeString = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        currentTimeEl.innerHTML = `<i class="far fa-clock"></i> ${timeString}`;
+    }
+}
+
+// ============================================================
+// MANUAL REFRESH
+// ============================================================
+window.refreshData = async function() {
+    const btn = document.querySelector('.refresh-btn');
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Refreshing...';
+        btn.disabled = true;
+    }
+    await fetchData();
+    if (btn) {
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+            btn.disabled = false;
+        }, 1000);
+    }
+};
+
+// ============================================================
+// SWITCH TABLE (dipanggil dari HTML)
+// ============================================================
+window.changeTable = function(tableName) {
+    switchTable(tableName);
+};
 
 // ============================================================
 // INITIALIZATION
 // ============================================================
 async function initDashboard() {
     console.log('🚀 Initializing Air Quality Dashboard...');
-    console.log('📡 Supabase URL:', APP_SUPABASE_URL);
-    console.log('📊 Table:', APP_TABLE_NAME);
-    console.log('📜 Regulasi: PERMEN LHK No. 70 Tahun 2016');
-    
+
     try {
         supabaseClient = window.supabase.createClient(APP_SUPABASE_URL, APP_SUPABASE_ANON_KEY);
         console.log('✅ Supabase client initialized');
-        
-        await fetchInitialData();
+
+        // Render UI awal
+        renderCards();
+        renderCharts();
+        renderHistoryHeader();
+
+        await fetchData();
         setupRealtimeSubscription();
-        
+        startAutoRefresh();
+
+        setInterval(updateTopTimestamp, 1000);
+        updateTopTimestamp();
+
     } catch (error) {
         console.error('❌ Init error:', error);
         updateConnectionStatus(false, error.message);
@@ -326,7 +768,7 @@ async function initDashboard() {
 }
 
 // ============================================================
-// START THE APP
+// START
 // ============================================================
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initDashboard);
